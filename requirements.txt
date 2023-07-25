@@ -1,0 +1,16 @@
+black
+byotrack
+dacite
+deep-trainer
+expyrun
+ipywidgets
+matplotlib
+mypy
+notebook
+opencv-contrib-python
+pandas
+pylint
+scikit-learn
+scipy
+torch
+torchvision
