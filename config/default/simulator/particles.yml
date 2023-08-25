@@ -1,0 +1,11 @@
+simulator:
+  particle:
+    n: 1000
+    min_std: 1.0
+    max_std: 3.0
+    min_dist: 3.0
+  background:
+    n: 400
+    min_std: 20.0
+    max_std: 60.0
+    min_dist: 0.0

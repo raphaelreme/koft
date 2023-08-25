@@ -1,0 +1,4 @@
+simulator:
+  nam:
+      firing_rate: 0.01
+      decay: 0.95

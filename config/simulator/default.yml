@@ -1,0 +1,19 @@
+__new_key_policy__: pass
+
+__default__:
+  - ../default/experiments/common.yml
+  - ../default/simulator/default.yml
+
+__run__:
+  __main__: src.experiments.simulate:main
+  __name__: "{name}/{simulator.particle.n}/{simulator.imaging_config.snr}/{seed}"
+  __output_dir__: $DATA_FOLDER/pasteur/simulation  # Main output directoy. True output_dir is output_dir/__name__
+
+name: DEFAULT
+n_frames: 200
+display: False
+
+simulator:
+  nam:  # Deactivate the neurons firing by default
+      firing_rate: 0.0
+      decay: 1.0

@@ -1,0 +1,5 @@
+simulator:
+  global_motion:
+    period: 1000.0
+    noise_position: 0.0
+    noise_theta: 0.0

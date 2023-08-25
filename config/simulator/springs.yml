@@ -1,0 +1,15 @@
+__default__:
+  - ./default.yml
+
+name: springs
+
+
+simulator:  # Replace motion with spring motion + global drift
+  global_motion:
+    noise_position: 30.0
+    noise_theta: 0.15
+  motion:
+    motions:
+      - ShapeVariation
+      - LocalRotation
+      - ElasticMotion

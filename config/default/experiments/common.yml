@@ -1,0 +1,9 @@
+# Define minimum stuff for running an experiment
+
+__run__:
+  __main__: src.experiments:main
+  __name__: DEFAULT  # Identifier of the experiment. Should be modified and depends on the hyperparameter that can change.
+  __output_dir__: $EXPERIMENT_DIR  # Main output directoy. True output_dir is output_dir/name
+
+
+seed: 111
