@@ -1,0 +1,9 @@
+kalman:
+  detection_noise: 2.0
+  of_noise: 2.0
+  process_noise: 1.5
+  dist: likelihood
+  matching_method: opt_smooth
+  always_update_velocities: True
+  dim: 2
+  order: 1

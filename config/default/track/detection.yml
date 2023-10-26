@@ -1,0 +1,10 @@
+detection:
+  detector: wavelet  # wavelet/fake
+  wavelet:
+    k: 2.5
+    scale: 1
+    min_area: 8.0
+  fake:
+    fpr: 0.2
+    fnr: 0.2
+    measurement_noise: 0.5

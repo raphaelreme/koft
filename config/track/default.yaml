@@ -1,0 +1,17 @@
+__new_key_policy__: pass
+
+__default__:
+  - ../default/experiments/common.yml
+  - ../default/track/detection.yml
+  - ../default/track/kalman.yml
+
+__run__:
+  __main__: src.experiments.track:main
+  __name__: "{simulation_name}/{tracking_method}"
+  __output_dir__: $EXPERIMENT_DIR/tracking/  # Main output directoy. True output_dir is output_dir/__name__
+
+simulation_name: springs/1000/1.8/111/exp.0/
+simulation_path: $DATA_FOLDER/pasteur/simulation/{simulation_name}
+tracking_method: skt  # trackmate/emht/skt/koft--/koft/koft++
+icy_path: $ICY
+fiji_path: $FIJI

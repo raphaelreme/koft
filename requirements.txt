@@ -14,3 +14,5 @@ scikit-learn
 scipy
 torch
 torchvision
+# trackeval => Has to dl the github
+types-tqdm

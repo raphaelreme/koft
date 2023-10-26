@@ -103,3 +103,6 @@ _cv2_farneback = cv2.optflow.createOptFlow_Farneback()
 
 tvl1 = OptFlow(lambda x, y: _cv2_tvl1.calc(x, y, None), (0.0, 0.4), 5, 0.0)
 farneback = OptFlow(lambda x, y: _cv2_farneback.calc(x, y, None), (0.0, 1.0), 4, 3.0)
+
+# RAFT has also been used, but requires the RAFT github and more code.
+# It wasn't good enough, we therefore decided to drop its support here.
