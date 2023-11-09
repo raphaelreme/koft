@@ -131,10 +131,15 @@ class Simulator:
             background = (
                 1 - self.imaging_config.noise
             ) * background + self.imaging_config.noise  # Add a noise baseline
+        else:
+            background = self.imaging_config.noise * torch.ones_like(particles)
 
         snr = 10 ** (self.imaging_config.snr / 10)
-        alpha = (snr - 1) / (snr - 1 + 1 / 1)
-        baseline = (1 - alpha) * background + alpha * particles  # SNR = 1 / (1 - alpha) => alpha = (SNR - 1) / SNR
+        alpha = (snr - 1) / (
+            snr - 1 + 1 / 0.5
+        )  # Uses E[B(z_p)] = 0.5 and assume that the Poisson Shot noise is negligeable in the SNR
+        # TODO: Switch to E[B] = \sum B(z) 1(z \in mask) ~= 0.6
+        baseline = (1 - alpha) * background + alpha * particles
 
         # Poisson shot noise
         image = torch.distributions.Poisson(self.imaging_config.dt * baseline).sample((1,))[0] / self.imaging_config.dt

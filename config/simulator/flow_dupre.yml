@@ -1,15 +1,15 @@
 __default__:
   - ./default.yml
 
-name: flow_lovas_20140829_1
+name: flow_20140829_1
 
 simulator:
   base_video:
-    path: $DATA_FOLDER/pasteur/hydra/movies/lovas/20140829 1.tif
+    path: $DATA_FOLDER/pasteur/hydra/movies/dupre/20140829 1.tif
     transform:
       aggregate: True
       normalize: True
       q_min: 0.02
       q_max: 0.997
       smooth_scaling: 1.0
-    start: 800  # Start at an interesting moment in the video
+    start: 800  # Start at an interesting moment in the video (Contraction)

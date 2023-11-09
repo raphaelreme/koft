@@ -66,33 +66,10 @@ def main(name: str, cfg_data: dict) -> None:
     simulator = Simulator.from_config(cfg.simulator)
     saver = Saver(simulator)
 
-    # image = simulator.generate_image()
-    # pos = simulator.particles.mu.long()
-
-    # intensity = []
-    # signal = []
-    # snr = []
-    # for i, j in pos.tolist():
-    #     intensity.append(image[i - 2 : i + 3, j - 2 : j + 3].median())
-    #     signal.append(image[i - 12 : i + 13, j - 12 : j + 13].median())
-    #     if signal[-1] > 0.001:
-    #         snr.append(intensity[-1] / signal[-1])
-
-    # print(snr)
-    # print(np.mean(snr))
-
-    # print(10 * np.log(cfg.simulator.imaging_config.snr) / np.log(10))
+    # Lets print the alpha used for the simulation (mixture coef between background and particles)
     snr = 10 ** (cfg.simulator.imaging_config.snr / 10)
-    alpha = (snr - 1) / (snr - 1 + 1 / 1)
-
-    print(snr)
-    print(alpha)
-
-    # alpha = 1 - 1 / cfg.simulator.imaging_config.snr
-    # print("SNR_1:", np.sqrt(cfg.simulator.imaging_config.dt) * alpha)
-    # print("SNR_2:", np.sqrt(cfg.simulator.imaging_config.dt) * alpha / np.sqrt(alpha + 0.5 * (1 - alpha)))
-    # print("SNR_3:", np.sqrt(cfg.simulator.imaging_config.dt) * alpha / np.sqrt(0.5 * (1 - alpha)))
-    # print("SNR_4:", np.sqrt(cfg.simulator.imaging_config.dt) * (alpha + 0.5 * (1 - alpha)) / np.sqrt(0.5 * (1 - alpha)))
+    alpha = (snr - 1) / (snr - 1 + 1 / 0.5)  # From simulator
+    print("Alpha:", alpha)
 
     # Find springs for display and save
     springs = None
@@ -102,7 +79,7 @@ def main(name: str, cfg_data: dict) -> None:
 
     # Create a VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore
-    writer = cv2.VideoWriter(f"video.mp4", fourcc, 30, simulator.particles.size, isColor=False)
+    writer = cv2.VideoWriter("video.mp4", fourcc, 30, simulator.particles.size, isColor=False)
 
     frame_saved = False
     k = 0
