@@ -58,7 +58,7 @@ $ bash scripts/generate_paper_dataset.sh 444
 $ bash scripts/generate_paper_dataset.sh 555
 ```
 
-Reproducing the results for a particular method (skt, koft--, koft, koft++, emht, trackmate):
+Reproducing the results for a particular method (skt, koft--, koft, koft++, emht, trackmate, trackmate-kf):
 
 ```bash
 $ bash scripts/eval.sh $method  # With method in skt, koft, etc..
@@ -73,3 +73,5 @@ $ python scripts/aggregate_results.py
 ## Results
 
 ![results](images/results.png)
+
+Note: *u-track* in the paper corresponds to the results of *trackmate-kf* in the code.

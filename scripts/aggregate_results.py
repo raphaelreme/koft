@@ -10,10 +10,10 @@ import yaml  # type: ignore
 def main():
     print(f"{'':10}|{'Springs':62}|{'Flow':62}")
     print(
-        f"{'method':10}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}"
+        f"{'method':15}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}"
     )
     detections = ["Fake@90%", "Fake@70%", "Wavelet"]
-    for method in ["trackmate", "emht", "skt", "koft", "koft--", "koft++"]:
+    for method in ["trackmate", "trackmate-kf", "emht", "skt", "koft", "koft--", "koft++"]:
         aggregated = []
         for motion in ["springs", "flow_20140829_1"]:
             paths = glob.glob(f"{os.environ['EXPERIMENT_DIR']}/tracking/{motion}/1000/1.8/*/exp.0/{method}/*/")
@@ -52,7 +52,7 @@ def main():
                 aggregated.append(f"{mean*100:.1f} +/- {std*100:0.1f}% ({len(scores)})")
 
         print(
-            f"{method:10}|{aggregated[0]:20}|{aggregated[1]:20}|{aggregated[2]:20}|{aggregated[3]:20}|{aggregated[4]:20}|{aggregated[5]:20}"
+            f"{method:15}|{aggregated[0]:20}|{aggregated[1]:20}|{aggregated[2]:20}|{aggregated[3]:20}|{aggregated[4]:20}|{aggregated[5]:20}"
         )
 
 

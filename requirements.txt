@@ -1,5 +1,5 @@
 black
-byotrack
+byotrack==0.4.0
 dacite
 deep-trainer
 expyrun

@@ -11,7 +11,8 @@ import yaml  # type: ignore
 import byotrack
 from byotrack.implementation.detector.wavelet import WaveletDetector
 from byotrack.implementation.linker.icy_emht import EMHTParameters, IcyEMHTLinker, Motion
-from byotrack.implementation.linker.trackmate import TrackMateLinker
+from byotrack.implementation.linker.trackmate.trackmate import TrackMateLinker, TrackMateParameters
+from byotrack.implementation.refiner.interpolater import ForwardBackwardInterpolater
 
 from ..detector import FakeDetector
 from ..metrics.detections import DetectionMetric
@@ -73,6 +74,7 @@ class TrackingMethod(enum.Enum):
     KOFTmm = "koft--"
     KOFTpp = "koft++"
     TRACKMATE = "trackmate"
+    TRACKMATE_KF = "trackmate-kf"
     EMHT = "emht"
 
 
@@ -98,10 +100,18 @@ class ExperimentConfig:
                 ),
             )
 
-        if self.tracking_method is TrackingMethod.TRACKMATE:
+        if self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF):
             # As kalman tracking we let a gap of 2 consecutive miss detections
             # In that case, we allow 1.5 thresh
-            return TrackMateLinker(self.fiji_path, thresh, 3, thresh * 1.5)
+            return TrackMateLinker(
+                self.fiji_path,
+                TrackMateParameters(
+                    max_frame_gap=PartialTrack.MAX_NON_MEASURE,
+                    linking_max_distance=thresh,
+                    gap_closing_max_distance=thresh * 1.5,
+                    kalman_search_radius=thresh if self.tracking_method is TrackingMethod.TRACKMATE_KF else None,
+                ),
+            )
 
         if self.tracking_method is TrackingMethod.SKT:
             kalman_filter = constant_kalman_filter(
@@ -154,7 +164,10 @@ class ExperimentConfig:
             # return [3.0]
             return [3.0, 4.0, 5.0, 6.0]  # MAHA
 
-        if self.tracking_method is TrackingMethod.TRACKMATE or self.kalman.dist is Dist.EUCLIDIAN:
+        if (
+            self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
+            or self.kalman.dist is Dist.EUCLIDIAN
+        ):
             return [3.0, 5.0, 7.0, 10.0, 15.0]
 
         if self.kalman.dist is Dist.MAHALANOBIS:
@@ -199,6 +212,7 @@ def main(name: str, cfg_data: dict) -> None:
     print("Precision", tp / n_pred if n_pred else 1.0)
     print("f1", 2 * tp / (n_true + n_pred) if n_pred + n_true else 1.0)
 
+    refiner = ForwardBackwardInterpolater()
     metrics = {}
     best_thresh = 0.0
     best_hota = 0.0
@@ -206,10 +220,11 @@ def main(name: str, cfg_data: dict) -> None:
     for thresh in tqdm.tqdm(cfg.create_thresholds()):
         linker = cfg.create_linker(thresh)
         tracks = linker.run(video, detections_sequence)
+        tracks = refiner.run(video, tracks)
 
         tqdm.tqdm.write(f"Built {len(tracks)} tracks")
 
-        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 10:
+        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 15:
             tqdm.tqdm.write(f"Threshold: {thresh} => Tracking failed (too few or too many tracks). Continuing...")
             continue
 
