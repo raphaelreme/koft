@@ -1,0 +1,4 @@
+stitching_data:
+  video: $DATA_FOLDER/pasteur/hydra/movies/dupre/20160412_stk_0001_lagache.tif
+  tracklets: $DATA_FOLDER/pasteur/hydra/tracklets/icy_emht/manual/thibault_new_short_1bis.xml
+  links: $DATA_FOLDER/pasteur/hydra/links/thibault_manual_short_no_clean.json

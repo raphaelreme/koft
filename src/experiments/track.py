@@ -14,6 +14,7 @@ from byotrack.implementation.linker.icy_emht import EMHTParameters, IcyEMHTLinke
 from byotrack.implementation.linker.trackmate.trackmate import TrackMateLinker, TrackMateParameters
 from byotrack.implementation.refiner.interpolater import ForwardBackwardInterpolater
 
+from ..data import simulation
 from ..detector import FakeDetector
 from ..metrics.detections import DetectionMetric
 from ..metrics.tracking import compute_tracking_metrics
@@ -185,11 +186,8 @@ def main(name: str, cfg_data: dict) -> None:
     enforce_all_seeds(cfg.seed)
 
     # Read video and ground truth
-    video_path = cfg.simulation_path / "video.mp4"
-    gt_path = cfg.simulation_path / "video_data.pt"
-    video = byotrack.Video(video_path)
-    video.set_transform(byotrack.VideoTransformConfig(aggregate=True, normalize=True, q_min=0.00, q_max=1.0))
-    ground_truth = torch.load(gt_path)
+    video = simulation.open_video(cfg.simulation_path)
+    ground_truth = simulation.load_ground_truth(cfg.simulation_path)
 
     # Detections
     detector = cfg.detection.create_detector(ground_truth["mu"])
