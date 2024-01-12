@@ -1,0 +1,22 @@
+__new_key_policy__: pass
+
+__default__:
+  - ../default/experiments/common.yml
+  - ../default/data/dupre.yml
+  - ../default/data/stitching.yml
+
+__run__:
+  __main__: src.experiments.optical_flow:main
+  __name__: "{flow}{specs}-{scale}-{blur}"
+  __output_dir__: $EXPERIMENT_DIR/optical_flow/  # Main output directoy. True output_dir is output_dir/__name__
+
+# Simulated data
+of_simulation_name: flow_20140829_1/1000/1.8/111/exp.0/
+springs_simulation_name: springs/1000/1.8/111/exp.0/
+of_simulation: $DATA_FOLDER/pasteur/simulation/{of_simulation_name}
+springs_simulation: $DATA_FOLDER/pasteur/simulation/{springs_simulation_name}
+
+flow: farneback
+specs: ""  # Additional specs to add to the name (but unused in the code)
+scale: 4
+blur: 1.0
