@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Collection, Dict
 
@@ -7,7 +8,7 @@ import torch
 
 import byotrack
 
-sys.path.append("/home/rreme/workspace/pasteur/visual_tracking/TrackEval")
+sys.path.append(f"{os.environ.get('EXPYRUN_CWD', '.')}/TrackEval/")
 
 import trackeval  # type: ignore
 

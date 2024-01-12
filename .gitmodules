@@ -1,3 +1,9 @@
 [submodule "TrackEval"]
 	path = TrackEval
 	url = git@github.com:raphaelreme/TrackEval.git
+[submodule "RAFT"]
+	path = RAFT
+	url = git@github.com:princeton-vl/RAFT.git
+[submodule "voxelmorph"]
+	path = voxelmorph
+	url = git@github.com:voxelmorph/voxelmorph.git
