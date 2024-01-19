@@ -14,7 +14,7 @@ from byotrack.implementation.linker.icy_emht import EMHTParameters, IcyEMHTLinke
 from byotrack.implementation.linker.trackmate.trackmate import TrackMateLinker, TrackMateParameters
 from byotrack.implementation.refiner.interpolater import ForwardBackwardInterpolater
 
-from ..data import simulation
+from ..data import simulation, dupre
 from ..detector import FakeDetector
 from ..metrics.detections import DetectionMetric
 from ..metrics.tracking import compute_tracking_metrics
@@ -82,7 +82,9 @@ class TrackingMethod(enum.Enum):
 @dataclasses.dataclass
 class ExperimentConfig:
     seed: int
+    real_data: bool
     simulation_path: pathlib.Path
+    dupre_data: dupre.DupreDataConfig
     tracking_method: TrackingMethod
     detection: DetectionConfig
     kalman: KalmanConfig
@@ -186,8 +188,15 @@ def main(name: str, cfg_data: dict) -> None:
     enforce_all_seeds(cfg.seed)
 
     # Read video and ground truth
-    video = simulation.open_video(cfg.simulation_path)
-    ground_truth = simulation.load_ground_truth(cfg.simulation_path)
+    # As the code was designed for simulation initially, let's just patch things with dupre's data
+    if cfg.real_data:
+        video = cfg.dupre_data.open()
+        mu = byotrack.Track.tensorize(cfg.dupre_data.cleaned_tracks())
+        video = video[: len(mu)]
+        ground_truth = {"mu": mu, "weight": torch.ones_like(mu).mean(dim=-1)}
+    else:
+        video = simulation.open_video(cfg.simulation_path)
+        ground_truth = simulation.load_ground_truth(cfg.simulation_path)
 
     # Detections
     detector = cfg.detection.create_detector(ground_truth["mu"])

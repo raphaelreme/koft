@@ -1,0 +1,5 @@
+__default__:
+  - ./simulator.yml
+
+real_data: True  # False -> use simulation path / True -> use dupre's data
+simulation_name: dupre
