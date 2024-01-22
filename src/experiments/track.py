@@ -48,13 +48,12 @@ class DetectionConfig:
     detector: DetectionMethod
     wavelet: WaveletConfig
     fake: FakeConfig
-    # interactive = False  # Could tweak the detector parameters interactively ?
 
     def create_detector(self, mu: torch.Tensor) -> byotrack.Detector:
         if self.detector == DetectionMethod.WAVELET:
             return WaveletDetector(self.wavelet.scale, self.wavelet.k, self.wavelet.min_area)
 
-        return FakeDetector(mu, self.fake.measurement_noise, self.fake.fpr, self.fake.fnr)
+        return FakeDetector(mu, self.fake.measurement_noise, self.fake.fpr, self.fake.fnr, False)
 
 
 @dataclasses.dataclass
@@ -165,7 +164,7 @@ class ExperimentConfig:
             # On those where it converges 3.0 is the best, and it converges for 3.0 in all of them
             # So lets manually select [3.0] in high fpr/fnr. In other cases, let's keep the default grid search
             # return [3.0]
-            return [3.0, 4.0, 5.0, 6.0]  # MAHA
+            return [1.0, 2.0, 3.0, 4.0, 5.0]  # MAHA
 
         if (
             self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
