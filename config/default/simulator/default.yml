@@ -11,7 +11,7 @@ simulator:
   imaging_config:
     dt: 50.0
     noise: 0.1
-    snr: 2.0  # SNR in db (10 log_10)
+    snr: 1.5  # SNR in db (10 log_10)
 
   base_video:
     path: ""

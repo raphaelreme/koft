@@ -114,7 +114,7 @@ class Simulator:
         imaging_config: ImagingConfig,
     ):
         self.background = background
-        self.background_gain = background.draw_truth(scale=4).max() if background else 1.0
+        self.background_gain = background.draw_truth(scale=4).max().item() if background else 1.0
         self.particles = particles
 
         self.nam = nam
@@ -136,9 +136,8 @@ class Simulator:
 
         snr = 10 ** (self.imaging_config.snr / 10)
         alpha = (snr - 1) / (
-            snr - 1 + 1 / 0.5
-        )  # Uses E[B(z_p)] = 0.5 and assume that the Poisson Shot noise is negligeable in the SNR
-        # TODO: Switch to E[B] = \sum B(z) 1(z \in mask) ~= 0.6
+            snr - 1 + 1 / 0.6
+        )  # Uses E[B(z_p)] = 0.6 and assume that the Poisson Shot noise is negligeable in the SNR
         baseline = (1 - alpha) * background + alpha * particles
 
         # Poisson shot noise

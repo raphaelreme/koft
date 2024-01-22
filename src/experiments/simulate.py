@@ -68,7 +68,7 @@ def main(name: str, cfg_data: dict) -> None:
 
     # Lets print the alpha used for the simulation (mixture coef between background and particles)
     snr = 10 ** (cfg.simulator.imaging_config.snr / 10)
-    alpha = (snr - 1) / (snr - 1 + 1 / 0.5)  # From simulator
+    alpha = (snr - 1) / (snr - 1 + 1 / 0.6)  # From simulator
     print("Alpha:", alpha)
 
     # Find springs for display and save
