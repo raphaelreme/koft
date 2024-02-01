@@ -228,6 +228,7 @@ class SimpleKalmanTracker(byotrack.Linker):
                 # Register in case someone needs it afterwards (like kf.update)
                 projection.precision = projection.covariance.inverse().contiguous()
 
+            # precision = projection.covariance[:, None, :2, :2].inverse()
             precision = projection.precision[:, None, :2, :2]  # Handle 4d projection with speed. (n, 1, 2, 2)
             # We noticed that it is more efficient to use inv(cov)[:2, :2] rather than inv(cov[:2, :2])...
             # Need more investigatation but: This solution is equivalent to consider than the speed prediction
@@ -240,7 +241,7 @@ class SimpleKalmanTracker(byotrack.Linker):
                 dist = dist[..., 0, 0]
                 thresh = self.match_cfg.thresh**2  # No need to take the sqrt, let's compare to the sq thresh
             else:  # likelihood
-                log_det = torch.log(torch.det(projection.covariance))[:, None]  # Shape (N, 1)
+                log_det = -torch.log(torch.det(precision))  # Shape (N, 1)
                 # Dist = - log likelihood
                 dist = 0.5 * (diff.shape[2] * torch.log(2 * torch.tensor(torch.pi)) + log_det + dist[..., 0, 0])
                 thresh = -torch.log(torch.tensor(self.match_cfg.thresh)).item()
@@ -331,17 +332,22 @@ class SimpleKalmanTracker(byotrack.Linker):
             self.active_tracks = still_active
             return
 
-        # Initial state at measures,. Unmeasured state ([velocity, ]acceleration, jerk) are initialize at 0
-        # Variance for unmeasured state is the process_noise
-        # Variance for measured state is the measurement_noise
+        # Inital state:
+        # Initialize with no prior on the position (set at 0 with an inf uncertainty)
+        # Initialize with a 0 prior velocity/acceleration/jerk with 5x process_std uncertainty
+        # Then update with the measured state (and ensure that the position uncertainty is correct)
+
+        # Init covariance with uncorrelated states, with 5 process noise except on x,y
+        initial_covariance = 5 * self.kalman_filter.process_noise * torch.eye(self.kalman_filter.state_dim)
+        initial_covariance[:2, :2] = torch.eye(2) * 1e20  # Unknown position
         unmatched_state = GaussianState(
             torch.zeros((unmatched_measures.shape[0], self.kalman_filter.state_dim, 1)),
-            torch.cat([self.kalman_filter.process_noise[None]] * unmatched_measures.shape[0]),
+            torch.cat([initial_covariance[None]] * unmatched_measures.shape[0]),
         )
-        unmatched_state.mean[:, : unmatched_measures.shape[1]] = unmatched_measures
-        unmatched_state.covariance[
-            :, : unmatched_measures.shape[1], : unmatched_measures.shape[1]
-        ] = self.kalman_filter.measurement_noise
+        # Update with measures
+        unmatched_state = self.kalman_filter.update(unmatched_state, unmatched_measures)
+        # Correct for floating points errors with inf uncertainty
+        unmatched_state.covariance[:, :2, :2] = self.kalman_filter.measurement_noise[:2, :2]
 
         # Create a new active track for each new state created
         for i in range(unmatched_measures.shape[0]):
