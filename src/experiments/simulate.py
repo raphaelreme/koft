@@ -67,7 +67,7 @@ def main(name: str, cfg_data: dict) -> None:
     saver = Saver(simulator)
 
     # Lets print the alpha used for the simulation (mixture coef between background and particles)
-    snr = 10 ** (cfg.simulator.imaging_config.snr / 10)
+    snr = 10 ** (cfg.simulator.imaging_config.psnr / 10)
     alpha = (snr - 1) / (snr - 1 + 1 / 0.6)  # From simulator
     print("Alpha:", alpha)
 

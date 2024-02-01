@@ -6,7 +6,7 @@ __default__:
 
 __run__:
   __main__: src.experiments.simulate:main
-  __name__: "{name}/{simulator.particle.n}/{simulator.imaging_config.snr}/{seed}"
+  __name__: "{name}/{simulator.particle.n}/{simulator.imaging_config.psnr}-{simulator.imaging_config.delta}/{seed}"
   __output_dir__: $DATA_FOLDER/pasteur/simulation  # Main output directoy. True output_dir is output_dir/__name__
 
 name: DEFAULT

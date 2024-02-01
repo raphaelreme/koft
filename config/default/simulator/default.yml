@@ -9,9 +9,9 @@ __default__:
 simulator:
   warm_up: 500
   imaging_config:
-    dt: 50.0
+    delta: 50.0
     noise: 0.1
-    snr: 1.5  # SNR in db (10 log_10)
+    psnr: 1.5  # SNR in db (10 log_10)
 
   base_video:
     path: ""

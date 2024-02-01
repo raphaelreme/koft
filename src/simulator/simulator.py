@@ -14,8 +14,8 @@ from .nam import NeuronalActivityModel, NamConfig
 
 @dataclasses.dataclass
 class ImagingConfig:
-    dt: float = 100.0
-    snr: float = 1.5
+    delta: float = 100.0
+    psnr: float = 1.5
     noise: float = 0.1
 
 
@@ -134,14 +134,17 @@ class Simulator:
         else:
             background = self.imaging_config.noise * torch.ones_like(particles)
 
-        snr = 10 ** (self.imaging_config.snr / 10)
+        snr = 10 ** (self.imaging_config.psnr / 10)
         alpha = (snr - 1) / (
             snr - 1 + 1 / 0.6
         )  # Uses E[B(z_p)] = 0.6 and assume that the Poisson Shot noise is negligeable in the SNR
         baseline = (1 - alpha) * background + alpha * particles
 
         # Poisson shot noise
-        image = torch.distributions.Poisson(self.imaging_config.dt * baseline).sample((1,))[0] / self.imaging_config.dt
+        image = (
+            torch.distributions.Poisson(self.imaging_config.delta * baseline).sample((1,))[0]
+            / self.imaging_config.delta
+        )
 
         image.clip_(0.0, 1.0)
 

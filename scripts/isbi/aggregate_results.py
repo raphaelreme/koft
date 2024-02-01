@@ -16,7 +16,7 @@ def main():
     for method in ["trackmate", "trackmate-kf", "emht", "skt", "koft", "koft--", "koft++"]:
         aggregated = []
         for motion in ["springs", "flow_20140829_1"]:
-            paths = glob.glob(f"{os.environ['EXPERIMENT_DIR']}/tracking/{motion}/1000/1.8/*/exp.0/{method}/*/")
+            paths = glob.glob(f"{os.environ['EXPERIMENT_DIR']}/tracking/{motion}/1000/1.5-50.0/*/exp.0/{method}/*/")
             results: Dict[str, List[float]] = {detection_name: [] for detection_name in detections}
             for path in paths:
                 if not (pathlib.Path(path) / "best_metrics.yml").exists():

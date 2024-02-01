@@ -11,8 +11,8 @@ __run__:
   __output_dir__: $EXPERIMENT_DIR/optical_flow/  # Main output directoy. True output_dir is output_dir/__name__
 
 # Simulated data
-of_simulation_name: flow_20140829_1/1000/1.8/111/exp.0/
-springs_simulation_name: springs/1000/1.8/111/exp.0/
+of_simulation_name: flow_20140829_1/1000/1.5-50.0/111/exp.0/
+springs_simulation_name: springs/1000/1.5-50.0/111/exp.0/
 of_simulation: $DATA_FOLDER/pasteur/simulation/{of_simulation_name}
 springs_simulation: $DATA_FOLDER/pasteur/simulation/{springs_simulation_name}
 
