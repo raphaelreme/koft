@@ -48,7 +48,7 @@ class ExperimentConfig:
             return optical_flow.OptFlow(lambda x, y: np.zeros((*x.shape, 2), dtype=np.float32), scale=8, blur=0.0)
 
         if self.flow is OpticalFlow.FARNEBACK:
-            cv2_farneback = cv2.optflow.createOptFlow_Farneback()
+            cv2_farneback = cv2.FarnebackOpticalFlow_create(winSize=20)  # type: ignore
             return optical_flow.OptFlow(lambda x, y: cv2_farneback.calc(x, y, None), scale=self.scale, blur=self.blur)
 
         if self.flow is OpticalFlow.TVL1:
