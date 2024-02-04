@@ -100,6 +100,7 @@ class ExperimentConfig:
                     motion=Motion.MULTI,
                     tree_depth=2,
                 ),
+                timeout=120,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)
             )
 
         if self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF):
@@ -160,23 +161,19 @@ class ExperimentConfig:
 
     def create_thresholds(self) -> List[float]:
         if self.tracking_method is TrackingMethod.EMHT:
-            # XXX: EMHT struggle to converge in some scenarios with high frp and fnr.
-            # On those where it converges 3.0 is the best, and it converges for 3.0 in all of them
-            # So lets manually select [3.0] in high fpr/fnr. In other cases, let's keep the default grid search
-            # return [3.0]
-            return [1.0, 2.0, 3.0, 4.0, 5.0]  # MAHA
+            return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]  # MAHA
 
         if (
             self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
             or self.kalman.dist is Dist.EUCLIDIAN
         ):
-            return [3.0, 5.0, 7.0, 10.0, 15.0]
+            return [5.0, 7.0, 10.0, 15.0, 20.0]
 
         if self.kalman.dist is Dist.MAHALANOBIS:
-            return [0.5, 1.0, 2.0, 3.0, 4.0]
+            return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
 
         # self.dist is Dist.LIKELIHOOD:
-        return [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+        return [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
 
 
 def main(name: str, cfg_data: dict) -> None:
@@ -225,12 +222,15 @@ def main(name: str, cfg_data: dict) -> None:
     best_tracks: Collection[byotrack.Track] = []
     for thresh in tqdm.tqdm(cfg.create_thresholds()):
         linker = cfg.create_linker(thresh)
-        tracks = linker.run(video, detections_sequence)
-        tracks = refiner.run(video, tracks)
+        try:
+            tracks = linker.run(video, detections_sequence)
+            tracks = refiner.run(video, tracks)
+        except Exception:  # pylint: disable=broad-exception-caught
+            tracks = []  # Tracking failed (For instance: timeout in EMHT)
 
         tqdm.tqdm.write(f"Built {len(tracks)} tracks")
 
-        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 15:
+        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 20:
             tqdm.tqdm.write(f"Threshold: {thresh} => Tracking failed (too few or too many tracks). Continuing...")
             continue
 

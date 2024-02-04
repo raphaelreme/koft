@@ -1,6 +1,6 @@
 -e voxelmorph
 black
-byotrack==0.4.1
+byotrack
 dacite
 deep-trainer
 expyrun

@@ -1,0 +1,22 @@
+__new_key_policy__: pass
+
+__default__:
+  - ./simulator.yml
+
+__run__:
+  __output_dir__: $EXPERIMENT_DIR/tracking_snr/  # Main output directoy. True output_dir is output_dir/__name__
+
+motion: springs
+psnr: 1.5
+delta: 50.0
+simulation_name: "{motion}/1000/{psnr}-{delta}/{seed}/exp.0/"
+tracking_method: koft++  # trackmate/emht/skt/koft--/koft/koft++
+
+kalman:
+  of_noise: 5.0
+
+detection:
+  detector: fake  # Run Fake@80% by default
+  fake:
+    fpr: 0.2
+    fnr: 0.2
