@@ -128,9 +128,16 @@ def constant_kalman_filter(measurement_std: torch.Tensor, process_std: torch.Ten
     # Constant model
     # Noise in velocity estimation (which induce a noise in position estimation)
     process_matrix = torch.eye(state_dim) + torch.tensor(np.eye(state_dim, k=dim)).to(torch.float32)
-    process_noise = torch.tensor(
-        filterpy.common.Q_discrete_white_noise(order + 1, block_size=dim, order_by_dim=False)
-    ).to(torch.float32) * torch.cat([process_std**2] * (order + 1))
+
+    if order == 0:
+        process_noise = torch.eye(state_dim) * process_std**2
+    else:
+        process_noise = torch.tensor(
+            filterpy.common.Q_discrete_white_noise(order + 1, block_size=dim, order_by_dim=False)
+        ).to(torch.float32) * torch.cat([process_std**2] * (order + 1))
+    # process_noise = torch.tensor(
+    #     filterpy.common.Q_discrete_white_noise(order + 1, block_size=dim, order_by_dim=False)
+    # ).to(torch.float32) * torch.cat([process_std**2] * (order + 1))
 
     return KalmanFilter(process_matrix, measurement_matrix, process_noise, measurement_noise)
 
