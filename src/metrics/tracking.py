@@ -83,23 +83,19 @@ def add_similarity(data: Dict):
 
 def compute_tracking_metrics(
     tracks: Collection[byotrack.Track], ground_truth: Dict[str, torch.Tensor]
-) -> Dict[str, float]:
-    """Compute HOTA@1.5pixels (consider that gt matches with pred if dist < 1.5 pixels)
-
-    Also returns localization errors when matching at 4.5 pixels.
-
-    We choose not to aggregate the HOTA performances at different thresholds, but rather choose one,
-    and use LocA to measure localization errors. (Converted in pixels)
+) -> Dict[str, torch.Tensor]:
+    """Compute HOTA at different thresholds
 
     Keys:
-        HOTA: HOTA at 1.5 pixels
+        HOTA: HOTA
         DetA: Jacquard of detections
         DetPr: Precision of detections
         DetRe: Recall of detections
         AssA: Jacquard of associations
         AssPr: Precision of associations
         AssRe: Recall of associations
-        Loca: Localization errors (but at 4.5 pixels)
+        LocA: Localization errors
+        Thresholds: Localization thresholds for true positive association
     """
     gt_data = simulator_to_eval(ground_truth["mu"], ground_truth["weight"])
     track_data = tracks_to_eval(tracks)
@@ -109,14 +105,9 @@ def compute_tracking_metrics(
     metric = trackeval.metrics.hota.HOTA()
     metrics = metric.eval_sequence(data)
 
-    # -6 => 0.7 similarity => 1 - 1.5 / 5
-    return {
-        "HOTA": float(metrics["HOTA"][-6]),
-        "DetA": float(metrics["DetA"][-6]),
-        "DetPr": float(metrics["DetPr"][-6]),
-        "DetRe": float(metrics["DetRe"][-6]),
-        "AssA": float(metrics["AssA"][-6]),
-        "AssPr": float(metrics["AssPr"][-6]),
-        "AssRe": float(metrics["AssRe"][-6]),
-        "Loca": 5 - 5 * float(metrics["LocA"][1]),  # Mean of pixel errors for TP associations
-    }
+    metrics = {key: torch.tensor(value).to(torch.float32) for key, value in metrics.items() if "0" not in key}
+
+    metrics["LocA"] = 5 - 5 * metrics["LocA"]
+    metrics["Thresholds"] = 5 - 5 * torch.linspace(0.05, 0.95, 19)
+
+    return metrics

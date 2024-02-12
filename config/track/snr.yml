@@ -13,7 +13,7 @@ simulation_name: "{motion}/1000/{psnr}-{delta}/{seed}/exp.0/"
 tracking_method: koft++  # trackmate/emht/skt/koft--/koft/koft++
 
 kalman:
-  of_noise: 5.0
+  of_noise: 2.0
 
 detection:
   detector: fake  # Run Fake@80% by default

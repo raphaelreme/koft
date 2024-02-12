@@ -225,7 +225,8 @@ def main(name: str, cfg_data: dict) -> None:
         try:
             tracks = linker.run(video, detections_sequence)
             tracks = refiner.run(video, tracks)
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            tqdm.tqdm.write(str(exc))
             tracks = []  # Tracking failed (For instance: timeout in EMHT)
 
         tqdm.tqdm.write(f"Built {len(tracks)} tracks")
@@ -234,12 +235,16 @@ def main(name: str, cfg_data: dict) -> None:
             tqdm.tqdm.write(f"Threshold: {thresh} => Tracking failed (too few or too many tracks). Continuing...")
             continue
 
-        metrics[thresh] = compute_tracking_metrics(tracks, ground_truth)
+        hota = compute_tracking_metrics(tracks, ground_truth)
 
-        tqdm.tqdm.write(f"Threshold: {thresh} => HOTA: {metrics[thresh]['HOTA']}")
+        # Hota @ 2 (-8 => Thresholds is 2)
+        metrics[thresh] = {key: value[-8].item() for key, value in hota.items()}
+
+        tqdm.tqdm.write(f"Threshold: {thresh} => HOTA@2.0: {metrics[thresh]['HOTA']}")
         tqdm.tqdm.write(yaml.dump(metrics[thresh]))
 
         if metrics[thresh]["HOTA"] > best_hota:
+            torch.save(hota, "hota.pt")  # Save full hota just in case
             best_thresh = thresh
             best_tracks = tracks
             best_hota = metrics[thresh]["HOTA"]

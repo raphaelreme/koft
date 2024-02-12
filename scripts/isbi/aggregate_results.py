@@ -4,6 +4,7 @@ import pathlib
 from typing import Dict, List
 
 import numpy as np
+import torch
 import yaml  # type: ignore
 
 
@@ -39,8 +40,10 @@ def main():
                 if not detection_name:
                     continue
 
-                with open(pathlib.Path(path) / "best_metrics.yml", "r", encoding="utf-8") as file:
-                    hota = yaml.safe_load(file)["HOTA"]
+                # with open(pathlib.Path(path) / "best_metrics.yml", "r", encoding="utf-8") as file:
+                #     hota = yaml.safe_load(file)["HOTA"]
+
+                hota = torch.load(pathlib.Path(path) / "hota.pt")["HOTA"][-8]  # Let's ensure we are at 2.0 thresholds
 
                 results[detection_name].append(hota)
 
