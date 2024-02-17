@@ -20,7 +20,7 @@ from ..metrics.detections import DetectionMetric
 from ..metrics.tracking import compute_tracking_metrics
 from ..skt import constant_kalman_filter, Dist, Method, MatchingConfig, SimpleKalmanTracker, PartialTrack
 from ..koft import constant_koft_filter, OptFlowExtraction, SingleUpdateKOFTracker, TwoUpdateKOFTracker
-from ..optical_flow import farneback
+from ..optical_flow import farneback, warp
 from ..utils import enforce_all_seeds
 
 
@@ -89,6 +89,7 @@ class ExperimentConfig:
     kalman: KalmanConfig
     icy_path: pathlib.Path
     fiji_path: pathlib.Path
+    warp: bool = False
 
     def create_linker(self, thresh: float) -> byotrack.Linker:
         """Create a linker"""
@@ -162,12 +163,16 @@ class ExperimentConfig:
 
     def create_thresholds(self) -> List[float]:
         if self.tracking_method is TrackingMethod.EMHT:
+            if self.warp:
+                return [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
             return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]  # MAHA
 
         if (
             self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
             or self.kalman.dist is Dist.EUCLIDIAN
         ):
+            if self.warp:
+                return [2.0, 3.0, 5.0, 7.0, 10.0, 15.0]
             return [3.0, 5.0, 7.0, 10.0, 15.0, 20.0]
 
         if self.kalman.dist is Dist.MAHALANOBIS:
@@ -216,6 +221,12 @@ def main(name: str, cfg_data: dict) -> None:
     print("Precision", tp / n_pred if n_pred else 1.0)
     print("f1", 2 * tp / (n_true + n_pred) if n_pred + n_true else 1.0)
 
+    if cfg.warp:
+        # Expensive N**2 operation
+        true_detections = detections_sequence
+        detections_sequence = warp.warp_detections(video, farneback, list(detections_sequence))
+        # ground_truth["mu"] = warp_mu(video, farneback, ground_truth["mu"])  # Let's not warp mu but unwarp tracks
+
     refiner = ForwardBackwardInterpolater()
     metrics = {}
     best_thresh = 0.0
@@ -225,7 +236,14 @@ def main(name: str, cfg_data: dict) -> None:
         linker = cfg.create_linker(thresh)
         try:
             tracks = linker.run(video, detections_sequence)
-            tracks = refiner.run(video, tracks)
+            if cfg.warp:
+                # Let's unwarp tracks
+                # In case SKT we need to extract the unsmoothed tracks
+                if isinstance(linker, SimpleKalmanTracker):
+                    tracks = linker.get_tracks_at_true_detections()
+
+                tracks = warp.unwarp_tracks_from_id(tracks, true_detections, detections_sequence)  # type: ignore
+            tracks = refiner.run(video, tracks)  # Close gap (for u-track, EMHT and warped SKT)
         except Exception as exc:  # pylint: disable=broad-exception-caught
             tqdm.tqdm.write(str(exc))
             tracks = []  # Tracking failed (For instance: timeout in EMHT)

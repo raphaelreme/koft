@@ -211,6 +211,27 @@ class SimpleKalmanTracker(byotrack.Linker):
             )
         return tracks
 
+    def get_tracks_at_true_detections(self) -> List[byotrack.Track]:
+        """Get non smoothed tracks, with only points matching a detection position
+
+        Should be called only after a `run`
+        """
+        tracks = []
+        for track in self.tracks + self.active_tracks:
+            if track.track_state in (track.TrackState.DELETED, track.TrackState.INITIATED):
+                continue  # Ignore unconfirmed tracks
+
+            tracks.append(
+                byotrack.Track(
+                    track.start,
+                    torch.cat(
+                        [m[None, :, 0] for m in track._measure[: len(track)]]  # pylint: disable=protected-access
+                    ),
+                    track.track_id,
+                )
+            )
+        return tracks
+
     def match(self, projection: GaussianState, measures: torch.Tensor) -> torch.Tensor:
         """Match projection with measures using positions
 

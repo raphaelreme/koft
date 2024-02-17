@@ -25,9 +25,13 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
             shape = torch.tensor(frame.shape)
 
             detected = torch.rand(self.n_particles) >= self.fnr  # Miss some particles (randomly)
+
+            idx = torch.arange(self.n_particles)[detected]
             positions = self.mu[k, detected] + torch.randn((detected.sum(), 2)) * self.noise
-            positions = positions[(positions > 0).all(dim=-1)]
-            positions = positions[(positions < shape - 1).all(dim=-1)]
+
+            valid = torch.logical_and((positions > 0).all(dim=-1), (positions < shape - 1).all(dim=-1))
+            positions = positions[valid]
+            idx = idx[valid]
 
             # Create fake detections
             # 1- Quickly compute the background mask
@@ -42,6 +46,7 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
                 false_alarm = false_alarm[mask[false_alarm.long()[:, 0], false_alarm.long()[:, 1]]]
 
             positions = torch.cat((positions, false_alarm))
+            idx = torch.cat((idx, -torch.ones_like(false_alarm)[:, 0]))
 
             # bbox = torch.cat((positions - 1, torch.zeros_like(positions) + 3), dim=-1)
             detections_sequence.append(
@@ -50,6 +55,7 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
                         "position": positions,
                         # "bbox": bbox.round().to(torch.int32),
                         "shape": shape,
+                        "idx": idx,
                     },
                     frame_id=k,
                 )

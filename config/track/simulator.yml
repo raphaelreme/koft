@@ -17,3 +17,4 @@ simulation_path: $DATA_FOLDER/pasteur/simulation/{simulation_name}
 tracking_method: skt  # trackmate/emht/skt/koft--/koft/koft++
 icy_path: $ICY
 fiji_path: $FIJI
+warp: False
