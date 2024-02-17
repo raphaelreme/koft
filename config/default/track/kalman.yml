@@ -7,3 +7,4 @@ kalman:
   always_update_velocities: True
   dim: 2
   order: 1
+  max_missed_detections: 7

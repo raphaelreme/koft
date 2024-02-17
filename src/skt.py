@@ -27,7 +27,7 @@ class PartialTrack:
     Will also store the kalman data for analysis.
     """
 
-    MAX_NON_MEASURE = 3
+    MAX_NON_MEASURE = 7
     CONFIRMED_AT = 3
 
     class TrackState(enum.IntEnum):
@@ -185,7 +185,7 @@ class SimpleKalmanTracker(byotrack.Linker):
 
     def run(
         self, video: Iterable[np.ndarray], detections_sequence: Collection[byotrack.Detections]
-    ) -> Collection[byotrack.Track]:
+    ) -> List[byotrack.Track]:
         # Reset tracks and states
         self.tracks = []
         self.active_tracks = []

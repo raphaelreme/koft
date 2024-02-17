@@ -66,13 +66,13 @@ class KalmanConfig:
     always_update_velocities: bool = True
     dim: int = 2
     order: int = 1
+    max_missed_detections: int = 7
 
 
 class TrackingMethod(enum.Enum):
     SKT = "skt"
     KOFT = "koft"
     KOFTmm = "koft--"
-    KOFTpp = "koft++"
     TRACKMATE = "trackmate"
     TRACKMATE_KF = "trackmate-kf"
     EMHT = "emht"
@@ -92,6 +92,8 @@ class ExperimentConfig:
 
     def create_linker(self, thresh: float) -> byotrack.Linker:
         """Create a linker"""
+        PartialTrack.MAX_NON_MEASURE = self.kalman.max_missed_detections
+
         if self.tracking_method is TrackingMethod.EMHT:
             return IcyEMHTLinker(
                 self.icy_path,
@@ -150,7 +152,6 @@ class ExperimentConfig:
             #     False,
             # )
 
-        PartialTrack.MAX_NON_MEASURE = 5 if self.tracking_method is TrackingMethod.KOFTpp else 3
         return TwoUpdateKOFTracker(
             kalman_filter,
             farneback,
@@ -167,13 +168,13 @@ class ExperimentConfig:
             self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
             or self.kalman.dist is Dist.EUCLIDIAN
         ):
-            return [5.0, 7.0, 10.0, 15.0, 20.0]
+            return [3.0, 5.0, 7.0, 10.0, 15.0, 20.0]
 
         if self.kalman.dist is Dist.MAHALANOBIS:
             return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
 
         # self.dist is Dist.LIKELIHOOD:
-        return [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+        return [5e-4, 7.5e-4, 1e-3, 2.5e-3, 5e-3, 7.5e-3]
 
 
 def main(name: str, cfg_data: dict) -> None:
