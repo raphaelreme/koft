@@ -51,14 +51,14 @@ We provide scripts to generate the same dataset that we used and run the same ex
 
 ```bash
 $ # Generate dataset for 5 differents seeds
-$ bash scripts/isbi/generate_paper_dataset.sh 111
-$ bash scripts/isbi/generate_paper_dataset.sh 222
-$ bash scripts/isbi/generate_paper_dataset.sh 333
-$ bash scripts/isbi/generate_paper_dataset.sh 444
-$ bash scripts/isbi/generate_paper_dataset.sh 555
+$ bash scripts/isbi/generate_dataset.sh 111
+$ bash scripts/isbi/generate_dataset.sh 222
+$ bash scripts/isbi/generate_dataset.sh 333
+$ bash scripts/isbi/generate_dataset.sh 444
+$ bash scripts/isbi/generate_dataset.sh 555
 ```
 
-Reproducing the results for a particular method (skt, koft--, koft, koft++, emht, trackmate, trackmate-kf):
+Reproducing the results for a particular method (skt, koft--, koft, emht, trackmate, trackmate-kf):
 
 ```bash
 $ bash scripts/isbi/eval.sh $method  # With method in skt, koft, etc..

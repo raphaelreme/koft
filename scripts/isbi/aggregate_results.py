@@ -14,7 +14,7 @@ def main():
         f"{'method':15}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}|{'Fake@90%':20}|{'Fake@70%':20}|{'Wavelet':20}"
     )
     detections = ["Fake@90%", "Fake@70%", "Wavelet"]
-    for method in ["trackmate", "trackmate-kf", "emht", "skt", "koft", "koft--", "koft++"]:
+    for method in ["trackmate", "trackmate-kf", "emht", "skt", "koft--", "koft"]:
         aggregated = []
         for motion in ["springs", "flow_20140829_1"]:
             paths = glob.glob(f"{os.environ['EXPERIMENT_DIR']}/tracking/{motion}/1000/1.5-50.0/*/exp.0/{method}/*/")
@@ -39,9 +39,6 @@ def main():
 
                 if not detection_name:
                     continue
-
-                # with open(pathlib.Path(path) / "best_metrics.yml", "r", encoding="utf-8") as file:
-                #     hota = yaml.safe_load(file)["HOTA"]
 
                 hota = torch.load(pathlib.Path(path) / "hota.pt")["HOTA"][-8]  # Let's ensure we are at 2.0 thresholds
 
