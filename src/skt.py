@@ -144,7 +144,7 @@ def constant_kalman_filter(measurement_std: torch.Tensor, process_std: torch.Ten
 
 class Dist(enum.Enum):
     MAHALANOBIS = "mahalanobis"
-    EUCLIDIAN = "euclidian"
+    EUCLIDEAN = "euclidean"
     LIKELIHOOD = "likelihood"
 
 
@@ -225,7 +225,7 @@ class SimpleKalmanTracker(byotrack.Linker):
                 byotrack.Track(
                     track.start,
                     torch.cat(
-                        [m[None, :, 0] for m in track._measure[: len(track)]]  # pylint: disable=protected-access
+                        [m[None, :2, 0] for m in track._measure[: len(track)]]  # pylint: disable=protected-access
                     ),
                     track.track_id,
                 )
@@ -273,7 +273,7 @@ class SimpleKalmanTracker(byotrack.Linker):
                 # Dist = - log likelihood
                 dist = 0.5 * (diff.shape[2] * torch.log(2 * torch.tensor(torch.pi)) + log_det + dist[..., 0, 0])
                 thresh = -torch.log(torch.tensor(self.match_cfg.thresh)).item()
-        else:  # Euclidian
+        else:  # Euclidean
             dist = torch.cdist(projection.mean[:, :2, 0], measures[:, :2, 0])
             thresh = self.match_cfg.thresh
 

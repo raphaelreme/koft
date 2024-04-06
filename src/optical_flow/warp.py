@@ -16,6 +16,8 @@ def warp_detections(
 ) -> List[byotrack.Detections]:
     """Warp Detections onto the last frame using optical flow
 
+    # quadratic complexity
+
     Warnings: Assume that the detections are sorted and that there is one Detections by video frame
     Will only warp the positions and drop the rest
     """
@@ -45,13 +47,64 @@ def warp_detections(
     return [
         byotrack.Detections(
             {  # Has to round positions for a compatible SKT/u-track/eMHT unwarping
-                "position": torch.tensor(position.clip(0.0, shape.numpy()).round(), dtype=torch.float32),
+                "position": torch.tensor(position.clip(0.0, shape.numpy() - 1).round(), dtype=torch.float32),
                 "shape": shape,
                 **detections_extra_data[i],
             },
             frame_id=i,
         )
         for i, position in enumerate(positions)
+    ]
+
+
+def warp_detections_linear(
+    video, optflow: OptFlow, detections_sequence: List[byotrack.Detections]
+) -> List[byotrack.Detections]:
+    """Warp Detections onto the last frame using optical flow (Linear complexity)
+
+    Warnings: Assume that the detections are sorted and that there is one Detections by video frame
+    Will only warp the positions and drop the rest
+    """
+    video = video[::-1]
+    dst = optflow.prepare(video[0])
+    cum_flow = np.zeros((*dst.shape, 2))
+    shape = torch.tensor(detections_sequence[0].shape)
+    points = np.indices(dst.shape, dtype=np.float64).transpose(1, 2, 0)
+
+    warped_positions = [detections_sequence[-1].position.round()]
+    for i, frame in enumerate(tqdm.tqdm(video[1:])):
+        src = optflow.prepare(frame)
+        flow = optflow.calc(src, dst)
+        # Compute cum flow from n-i to n
+        warped_points = points + flow[:, :, ::-1]
+        warped_points = warped_points + optflow.flow_at(cum_flow, warped_points.reshape(-1, 2), 1).reshape(
+            *dst.shape, 2
+        )
+        cum_flow = (warped_points - points)[:, :, ::-1]
+
+        position = optflow.transform(cum_flow, detections_sequence[len(video) - i - 2].position.clone().numpy())
+
+        warped_positions.append(torch.tensor(position.clip(0.0, shape.numpy() - 1).round(), dtype=torch.float32))
+        dst = src
+
+    detections_extra_data = [
+        {
+            key: value
+            for key, value in detections_sequence[i].data.items()
+            if key not in ["shape", "position", "bbox", "segmentation"]
+        }
+        for i in range(len(detections_sequence))
+    ]
+    return [
+        byotrack.Detections(
+            {  # Has to round positions for a compatible SKT/u-track/eMHT unwarping
+                "position": position,
+                "shape": shape,
+                **detections_extra_data[i],
+            },
+            frame_id=i,
+        )
+        for i, position in enumerate(reversed(warped_positions))
     ]
 
 

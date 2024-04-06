@@ -60,6 +60,7 @@ def main(name: str, cfg_data: dict) -> None:
             torch.tensor(cfg.kalman.detection_noise),
             torch.tensor(of_noise),
             torch.tensor(cfg.kalman.process_noise),
+            order=cfg.kalman.order,
         )
 
         metrics = {}

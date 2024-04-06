@@ -169,7 +169,7 @@ class ExperimentConfig:
 
         if (
             self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
-            or self.kalman.dist is Dist.EUCLIDIAN
+            or self.kalman.dist is Dist.EUCLIDEAN
         ):
             if self.warp:
                 return [2.0, 3.0, 5.0, 7.0, 10.0, 15.0]
@@ -179,7 +179,7 @@ class ExperimentConfig:
             return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
 
         # self.dist is Dist.LIKELIHOOD:
-        return [5e-4, 7.5e-4, 1e-3, 2.5e-3, 5e-3, 7.5e-3]
+        return [1e-4, 5e-4, 1e-3, 2.5e-3, 5e-3, 7.5e-3]
 
 
 def main(name: str, cfg_data: dict) -> None:
@@ -222,9 +222,8 @@ def main(name: str, cfg_data: dict) -> None:
     print("f1", 2 * tp / (n_true + n_pred) if n_pred + n_true else 1.0)
 
     if cfg.warp:
-        # Expensive N**2 operation
         true_detections = detections_sequence
-        detections_sequence = warp.warp_detections(video, farneback, list(detections_sequence))
+        detections_sequence = warp.warp_detections_linear(video, farneback, list(detections_sequence))
         # ground_truth["mu"] = warp_mu(video, farneback, ground_truth["mu"])  # Let's not warp mu but unwarp tracks
 
     refiner = ForwardBackwardInterpolater()
@@ -239,7 +238,7 @@ def main(name: str, cfg_data: dict) -> None:
             if cfg.warp:
                 # Let's unwarp tracks
                 # In case SKT we need to extract the unsmoothed tracks
-                if isinstance(linker, SimpleKalmanTracker):
+                if isinstance(linker, (SimpleKalmanTracker, TwoUpdateKOFTracker, SingleUpdateKOFTracker)):
                     tracks = linker.get_tracks_at_true_detections()
 
                 tracks = warp.unwarp_tracks_from_id(tracks, true_detections, detections_sequence)  # type: ignore

@@ -8,16 +8,16 @@ import torch
 
 
 class RandomAcceleratedSpring:
-    """Model a damped harmonic oscillator (spring) with random forces
+    """Model a damped harmonic oscillator (spring) with random Gaussian forces
 
     a = -lambda v - k (x - x_eq) + noise * randn()
 
-    We discretize the equation in
-    x(t+1) = x(t) + v(t) dt
+    We discretize the equation in (Semi-implicit Euler)
     v(t+1) = v(t) - lambda v(t) dt - k(x(t+1) - x_eq) dt + noise * randn() dt
+    x(t+1) = x(t) + v(t+1) dt
 
     For this to be true we suppose that the variation in speeds and position is small
-    and thus k dt and lambda dt should be small (<1)
+    and thus k dt and lambda dt should be small (<< 1)
 
     Additional math:
     ----------------
@@ -82,14 +82,23 @@ class RandomAcceleratedSpring:
 
     @property
     def critical_time(self) -> torch.Tensor:
+        """Critical time of the system
+
+        Here it corresponds to 2 pi / w0. (Period of oscillation when undamped)
+        It is also almost the period of pseudo oscillation when Q > 1/2 (except when it's really close to 1/2)
+
+        Finally, the exponential decays of the solution is 2 / lambda = 2 Q / w0. For Q ~ 1/2, the expoential decay
+        is ~ T / 2 pi. In T iterations, the system will come back to the equilibrium (if no additional perturbation)
+        """
         return 2 * math.pi / self.w0
 
     def update(self, dt=1.0):
         """Update the position and speed of each spring
 
-        x += v dt
+        We use the semi-implict Euler method:
         a = -lambda v - k x + noise * randn()
         v += a dt
+        x += v dt
 
         Args:
             dt (float): Size of the interval
@@ -107,16 +116,16 @@ class RandomAcceleratedSpring:
         # We can show that the speed is gaussian with std: sigma sqrt(tau * dt)
         # And the value is gaussian with std = sigma sqrt(tau^3 * dt / 3)
         # With this correction, we compensate the dt part of std for both speed and value
+        #
+        # Can also been shown to just add the same amount of everage force on a dt interval.
 
         # Update speed
         self.speed += acc * dt
 
         # Update value
         self.value += self.speed * dt
-        # NOTE: We use xk+1 = xk + vk+1 * dt (rather than xk + vk * dt)
-        # This compensate integration errors. If you reverse the equation this can be rewritten
-        # xk+1 = xk + vk & vk+1 = vk - k (xk+1 - x0)
-        # One can show that using xk+1 instead of xk improves the approximation of \int_k^k+1 a(t)dt
+        # NOTE: We use xk+1 = xk + vk+1 * dt (rather than xk + vk * dt) (semi-implicit instead of explicit)
+        # This is a simplectic integrator, which is much better suited for physical (Hamiltionien) systems.
 
     @staticmethod
     def build(
@@ -132,11 +141,11 @@ class RandomAcceleratedSpring:
         k = w0 **2
         lambda = w0 / Q
 
-        The noise should be scaled with w0 to keep the same level of noise with different angular frequency.
-        We can show that scaling needed is w0^(3/2). (Note that with a scaling of w0^(1/2) the noise on speed
-        is kept).
+        The force noise should be scaled in order to generate the same amount of noise on the solution (x).
+        Using energy conservation, we can show that x is a Gaussian N(x_eq, sigma**2 * dt / (2 lambda k)). (with Sigma
+        the std of the force noises). Therefore, we scale the force noises by sqrt(2 lambda k) = sqrt(2 w0^3/Q)
 
-        Also if you have a v0 or vmax to set, to keep the same behavior (same hmax), v0 or vmax should be scaled by
+        Also if you have a v0 or vmax to set, to keep the same behavior (same hmax), v0 or vmax should also be scaled by
         w0.
 
         As all is stable by w0, changing its value only affects the time scale. Double w0 and
@@ -144,15 +153,16 @@ class RandomAcceleratedSpring:
 
         Be careful that a large w0 implies to use smaller dt.
         Remember that we should have dt << T = 2 pi / w0.
-        The default value set T = 100 which works well by default with dt=1.
+        The default value is T = 100 which works well with the default dt=1.
+        But you should adapt to the systems you model.
 
         Args:
             value (torch.Tensor): Steady state and initial value
                 dtype: float32
             quality (torch.Tensor): Quality factor (Q). 0.5 for critically damped, >> 1 for low friction
                 Shape: Broadcastable with value, dtype: float32
-            noise (torch.Tensor): Std of the noise. We have choosen to scale it so that with Q=1/2, whatever w0,
-                the std of the generated position is equal to noise.
+            noise (torch.Tensor): Std of the noise. We have choosen to scale it so that the std of the
+                generated position is equal to noise.
                 Shape: Broadcastable with value, dtype: float32
             w0 (torch.Tensor): Angular frequency (sqrt(k))
                 Shape: Broadcastable with value, dtype: float32
@@ -161,7 +171,7 @@ class RandomAcceleratedSpring:
         Returns:
             RandomSpring: Spring with the good quality factor, critical time and noise
         """
-        return RandomAcceleratedSpring(value, w0**2, w0 / quality, noise * w0 ** (3 / 2) * 2)
+        return RandomAcceleratedSpring(value, w0**2, w0 / quality, noise * (2 * w0**3 / quality).sqrt())
 
 
 class SimpleBrownianSpring:
@@ -169,6 +179,8 @@ class SimpleBrownianSpring:
 
     The model is not really a spring but more a confined brownian motion:
     xt+1 = xt + randn() * noise - k (xt - x0)
+
+    This is in fact a Orstein-Uhlenbeck process.
 
     Can be simulated with the RandomAcceleratedSpring with lambda dt = 1.0 but simpler this way
 
@@ -244,7 +256,8 @@ class RandomNoise:
         self.noise = noise
 
     def __call__(self, model: "RandomRelationalSprings", dt: float) -> torch.Tensor:
-        return 2 / math.sqrt(dt) * self.noise * torch.randn(model.points.shape) * model.w0 ** (3 / 2)
+        # XXX: Unable to handle a different w0 for each spring. (Here we assume a single w0 and lambda for nodes)
+        return self.noise / math.sqrt(dt) * (2 * model.w0**3 / model.quality).sqrt() * torch.randn(model.points.shape)
 
 
 class RandomMuscles(RandomNoise):
