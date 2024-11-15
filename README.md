@@ -2,7 +2,7 @@
 
 ![koft](images/koft.png)
 
-Code for "Particle tracking in biological images with optical-flow enhanced Kalman filtering", accepted at ISBI2024.
+Code for the [paper](https://ieeexplore.ieee.org/abstract/document/10635656): "Particle tracking in biological images with optical-flow enhanced Kalman filtering", published at IEEE ISBI2024.
 
 Abstract:
 *Single-particle-tracking is a fundamental pre-requisite for studying biological processes in time-lapse microscopy. However, it remains a challenging task in many applications where numerous particles are driven by fast and complex motion. To anticipate the  motion of particles most tracking algorithms usually assume near-constant position, velocity or acceleration of particles over consecutive frames. However, such assumptions are not robust to the large and sudden changes in velocity that typically occur in in vivo imaging. In this paper, we exploit optical flow to directly measure the velocity of particles in a Kalman filtering context. The resulting method shows improved robustness and correctly predicts particles positions, even with sudden motions. We validate our method on simulated data, in particular with high particle density and fast, elastic motions. We show that it divides tracking errors by two, when compared to other tracking algorithms, while preserving fast execution time.*
@@ -75,3 +75,23 @@ $ python scripts/isbi/aggregate_results.py
 ![results](images/results.png)
 
 Note: *u-track* in the paper corresponds to the results of *trackmate-kf* in the code.
+
+
+## Cite us
+
+
+If you use this work, please cite our [paper](https://ieeexplore.ieee.org/abstract/document/10635656):
+
+```bibtex
+@INPROCEEDINGS{10635656koft,
+  author={Reme, Raphael and Newson, Alasdair and Angelini, Elsa and Olivo-Marin, Jean-Christophe and Lagache, Thibault},
+  booktitle={2024 IEEE International Symposium on Biomedical Imaging (ISBI)},
+  title={Particle Tracking in Biological Images with Optical-Flow Enhanced Kalman Filtering},
+  year={2024},
+  volume={},
+  number={},
+  pages={1-5},
+  keywords={Tracking;Filtering;Prediction algorithms;Particle measurements;Robustness;Kalman filters;Velocity measurement;Single-Particle-Tracking;Optical Flow;Kalman Filtering},
+  doi={10.1109/ISBI56570.2024.10635656}
+}
+```
