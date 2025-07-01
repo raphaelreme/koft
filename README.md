@@ -11,13 +11,17 @@ Abstract:
 
 ![simulation](images/simulation.gif)
 
-We simulate tracking data to validate our method. The goal of our simulator is to produce representative tracking data of fluorescence imaging of cells in freely-behaving animals.
+We rely on the [SINETRA](https://github.com/raphaelreme/SINETRA) synthetic datasets. It produces representative tracking data of fluorescence imaging of cells in freely-behaving animals.
 
-Particles moves according to elastic motions. The motions are either extracted from true fluorescence videos using optical flow (on the left) or produced from a physical-based simulation with springs (on the right). 
+Targets move according to elastic motions. The motions are either extracted from true fluorescence videos using optical flow (on the left) or produced from a physical-based simulation with springs (on the right).
 
-Videos and ground truths used in the paper can be downloaded from https://partage.imt.fr/index.php/s/MHTpefDJWHp2HRD or reproduced with the code provided here.
+The dataset can be generated with the code provided here. It relies on a fluorescence video of Hydra Vulgaris from Dupre C, et. al Non-overlapping Neural Networks in Hydra vulgaris. Curr Biol. 2017 Apr 24;27(8):1085-1097. doi: 10.1016/j.cub.2017.02.049. Epub 2017 Mar 30. PMID: 28366745; PMCID: PMC5423359. This video should be downloaded (see below).
 
-To extract optical flow, we used a fluorescence video of Hydra Vulgaris from Dupre C, Yuste R. Non-overlapping Neural Networks in Hydra vulgaris. Curr Biol. 2017 Apr 24;27(8):1085-1097. doi: 10.1016/j.cub.2017.02.049. Epub 2017 Mar 30. PMID: 28366745; PMCID: PMC5423359.
+We also use annnotated tracking data from the same paper. The video and ground truth tracks should also be downloaded. We provide a small script to download the dupre data and save it in `dataset/dupre` folder:
+
+```bash
+$ bash scripts/download_hydra_data.sh
+```
 
 ## Install
 
@@ -76,6 +80,59 @@ $ python scripts/isbi/aggregate_results.py
 
 Note: *u-track* in the paper corresponds to the results of *trackmate-kf* in the code.
 
+
+## Reproduce (TIP)
+
+We provide scripts to generate the same dataset that we used and run the same experiments
+
+```bash
+$ # Generate dataset for 5 differents seeds
+$ bash scripts/tip/generate_dataset.sh 111
+$ bash scripts/tip/generate_dataset.sh 222
+$ bash scripts/tip/generate_dataset.sh 333
+$ bash scripts/tip/generate_dataset.sh 444
+$ bash scripts/tip/generate_dataset.sh 555
+```
+
+### Optical flow
+We benchmarked optical flow algorithms with:
+```bash
+$ bash scripts/tip/flow.sh 111
+$ bash scripts/tip/flow.sh 222
+$ bash scripts/tip/flow.sh 333
+$ bash scripts/tip/flow.sh 444
+$ bash scripts/tip/flow.sh 555
+```
+
+Aggregating tge results (mean +- std (N)) on the different seeds:
+
+```bash
+$ python scripts/tip/aggregate_flow_results.py
+```
+
+### Tracking (SINETRA)
+To reproduce our tracking results on SINETRA, run:
+```bash
+$ bash scripts/tip/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+```
+
+Aggregating the results (mean +- std (N)) on the different seeds:
+
+```bash
+$ python scripts/tip/aggregate_results_simulation.py
+```
+
+### Tracking (Dupre's Hydra)
+To reproduce our tracking results on Hydra vulgaris, run:
+```bash
+$ bash scripts/tip/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+```
+
+Aggregating the results (mean +- std (N)) on the different seeds:
+
+```bash
+$ python scripts/tip/aggregate_results_dupre.py
+```
 
 ## Cite us
 

@@ -5,7 +5,7 @@ name: hydra_flow
 
 simulator:
   base_video:
-    path: $EXPYRUN_CWD/dupre_20140829_1_contracting.tiff
+    path: $EXPYRUN_CWD/dataset/dupre/dupre_20140829_1_contracting.tiff
     transform:
       aggregate: True
       normalize: True

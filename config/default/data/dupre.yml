@@ -1,6 +1,6 @@
 dupre_data:
-  video: $DATA_FOLDER/pasteur/hydra/movies/dupre/20160412_stk_0001.tif
-  tracks: $DATA_FOLDER/pasteur/hydra/tracks/dupre/20160412_dupreannotation_stk0001.csv
+  video: $EXPYRUN_CWD/dataset/dupre/20160412_stk_0001.tif
+  tracks: $EXPYRUN_CWD/dataset/dupre/20160412_dupreannotation_stk0001.csv
   measurement_noise: 2.5
   process_noise: 0.5
   speed_thresh: 1.0
