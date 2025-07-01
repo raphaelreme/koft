@@ -7,14 +7,17 @@ __default__:
 
 __run__:
   __main__: src.experiments.optical_flow:main
-  __name__: "{flow}{specs}-{scale}-{blur}"
-  __output_dir__: $EXPERIMENT_DIR/optical_flow/  # Main output directoy. True output_dir is output_dir/__name__
+  __name__: "{flow}{specs}-{scale}-{blur}/{alpha}-{delta}/{seed}"
+  __output_dir__: experiment_folder/optical_flow/  # Main output directoy. True output_dir is output_dir/__name__
 
-# Simulated data
-of_simulation_name: flow_20140829_1/1000/1.5-50.0/111/exp.0/
-springs_simulation_name: springs/1000/1.5-50.0/111/exp.0/
-of_simulation: $DATA_FOLDER/pasteur/simulation/{of_simulation_name}
-springs_simulation: $DATA_FOLDER/pasteur/simulation/{springs_simulation_name}
+run_dupre: False  # Compute flow metrics on dupre's data
+run_stitching: False  # Compute stitching metrics (not done any longer)
+run_simulation: True  # Compute flow metrics on sinetra
+
+alpha: 0.2
+delta: 50.0
+of_simulation: $EXPYRUN_CWD/dataset/hydra_flow/{alpha}-{delta}/{seed}/
+springs_simulation: $EXPYRUN_CWD/dataset/springs_2d/{alpha}-{delta}/{seed}/
 
 flow: farneback
 specs: ""  # Additional specs to add to the name (but unused in the code)

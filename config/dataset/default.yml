@@ -1,0 +1,16 @@
+__new_key_policy__: pass
+
+__default__:
+  - ./simulator/default.yml
+
+__run__:
+  __main__: src.experiments.generate_data:main
+  __name__: "{name}/{simulator.imaging_config.alpha}-{simulator.imaging_config.delta}/{seed}"
+  __output_dir__: experiment_folder/dataset
+
+name: DEFAULT
+seed: 111
+n_frames: 200
+display: False
+dataset_path: $EXPYRUN_CWD/dataset  # Save to the local dataset folder
+format: python_only  # It will not generate the .tiff files for annotations. Change to "full" if needed.

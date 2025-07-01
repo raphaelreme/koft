@@ -1,0 +1,6 @@
+simulator:
+  emission:
+      name: constant  # Switch to nam to enable the neuronal activity model
+      nam:
+        firing_rate: 0.01
+        decay: 0.95

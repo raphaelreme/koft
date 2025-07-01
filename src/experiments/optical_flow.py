@@ -34,6 +34,9 @@ class OpticalFlow(enum.Enum):
 @dataclasses.dataclass
 class ExperimentConfig:
     seed: int
+    run_dupre: bool
+    run_stitching: bool
+    run_simulation: bool
     of_simulation: pathlib.Path
     springs_simulation: pathlib.Path
     dupre_data: dupre.DupreDataConfig
@@ -100,7 +103,7 @@ def tracklet2tracklet_dist(video: byotrack.Video, tracklets: List[byotrack.Track
     # Propagation of tracklets
     directed = propagate.DirectedFlowPropagation(optflow)
     propagation_matrix = emc2.propagation.forward_backward_propagation(
-        byotrack.Track.tensorize(tracklets), directed, video=video
+        byotrack.Track.tensorize(tracklets), video, directed
     )
 
     skip_mask = stitcher.skip_computation(tracklets, stitcher.max_overlap, stitcher.max_dist, stitcher.max_gap)
@@ -135,47 +138,52 @@ def main(name: str, cfg_data: dict) -> None:
     ##  Frame to frame metric
     f2f_dist: Dict[str, torch.Tensor] = {}
 
-    # Dupre
-    video = cfg.dupre_data.open()
-    tracks = cfg.dupre_data.cleaned_tracks()
-    f2f_dist["dupre"] = frame2frame_dist(video, tracks, optflow)
-    metrics["dupre"] = {
-        "RMSE": f2f_dist["dupre"].pow(2).mean().sqrt().item(),
-        "n-hard": (f2f_dist["dupre"] > hard_thresh(tracks)).sum().item() / f2f_dist["dupre"].numel() * 10**4,
-    }
-    print(f"Dupre: RMSE:{metrics['dupre']['RMSE']:.4f}, hard-links:{metrics['dupre']['n-hard']:.2f}")
+    if cfg.run_dupre:
+        # Dupre
+        video = cfg.dupre_data.open()
+        tracks = cfg.dupre_data.cleaned_tracks()
+        f2f_dist["dupre"] = frame2frame_dist(video, tracks, optflow)
+        metrics["dupre"] = {
+            "RMSE": f2f_dist["dupre"].pow(2).mean().sqrt().item(),
+            "n-hard": (f2f_dist["dupre"] > hard_thresh(tracks)).sum().item() / f2f_dist["dupre"].numel() * 10**4,
+        }
+        print(f"Dupre: RMSE:{metrics['dupre']['RMSE']:.4f}, hard-links:{metrics['dupre']['n-hard']:.2f}")
 
-    # Simu - OF
-    video = simulation.open_video(cfg.of_simulation)
-    tracks = simulation.load_tracks(cfg.of_simulation)
-    f2f_dist["of"] = frame2frame_dist(video, tracks, optflow)
-    metrics["of"] = {
-        "RMSE": f2f_dist["of"].pow(2).mean().sqrt().item(),
-        "n-hard": (f2f_dist["of"] > hard_thresh(tracks)).sum().item() / f2f_dist["of"].numel() * 10**4,
-    }
-    print(f"OF: RMSE:{metrics['of']['RMSE']:.4f}, hard-links:{metrics['of']['n-hard']:.2f}")
+    if cfg.run_simulation:
+        # Simu - OF
+        video = simulation.open_video(cfg.of_simulation)
+        tracks = simulation.load_tracks(cfg.of_simulation)
+        f2f_dist["of"] = frame2frame_dist(video, tracks, optflow)
+        metrics["of"] = {
+            "RMSE": f2f_dist["of"].pow(2).mean().sqrt().item(),
+            "n-hard": (f2f_dist["of"] > hard_thresh(tracks)).sum().item() / f2f_dist["of"].numel() * 10**4,
+        }
+        print(f"OF: RMSE:{metrics['of']['RMSE']:.4f}, hard-links:{metrics['of']['n-hard']:.2f}")
 
-    # Simu - springs
-    video = simulation.open_video(cfg.springs_simulation)
-    tracks = simulation.load_tracks(cfg.springs_simulation)
-    f2f_dist["springs"] = frame2frame_dist(video, tracks, optflow)
-    metrics["springs"] = {
-        "RMSE": f2f_dist["springs"].pow(2).mean().sqrt().item(),
-        "n-hard": (f2f_dist["springs"] > hard_thresh(tracks)).sum().item() / f2f_dist["springs"].numel() * 10**4,
-    }
-    print(f"Springs: RMSE:{metrics['springs']['RMSE']:.4f}, hard-links:{metrics['springs']['n-hard']:.2f}")
+        # Simu - springs
+        video = simulation.open_video(cfg.springs_simulation)
+        tracks = simulation.load_tracks(cfg.springs_simulation)
+        f2f_dist["springs"] = frame2frame_dist(video, tracks, optflow)
+        metrics["springs"] = {
+            "RMSE": f2f_dist["springs"].pow(2).mean().sqrt().item(),
+            "n-hard": (f2f_dist["springs"] > hard_thresh(tracks)).sum().item() / f2f_dist["springs"].numel() * 10**4,
+        }
+        print(f"Springs: RMSE:{metrics['springs']['RMSE']:.4f}, hard-links:{metrics['springs']['n-hard']:.2f}")
 
-    ## Stitching metric
-    video = cfg.stitching_data.open()
-    tracks = cfg.stitching_data.load_tracklets()
-    links = cfg.stitching_data.load_links()
+    if cfg.run_stitching:
+        ## Stitching metric
+        video = cfg.stitching_data.open()
+        tracks = cfg.stitching_data.load_tracklets()
+        links = cfg.stitching_data.load_links()
 
-    stitching_ap = (
-        stitching_metrics.compute_metrics(tracklet2tracklet_dist(video, tracks, optflow), links)["average_precision"]
-        * 100
-    )
-    metrics["stitching"] = {"ap": stitching_ap}
-    print(f"Stitching Average precision: {stitching_ap:.2f}")
+        stitching_ap = (
+            stitching_metrics.compute_metrics(tracklet2tracklet_dist(video, tracks, optflow), links)[
+                "average_precision"
+            ]
+            * 100
+        )
+        metrics["stitching"] = {"ap": stitching_ap}
+        print(f"Stitching Average precision: {stitching_ap:.2f}")
 
     with open("metrics.yml", "w", encoding="utf-8") as file:
         file.write(yaml.dump(metrics))

@@ -5,12 +5,8 @@ __default__:
 
 __run__:
   __main__: src.experiments.snr_track:main
-  __output_dir__: $EXPERIMENT_DIR/tracking_snr/  # Main output directoy. True output_dir is output_dir/__name__
+  __output_dir__: experiment_folder/tracking_snr/  # Main output directoy. True output_dir is output_dir/__name__
 
-motion: springs
-psnr: 1.5
-delta: 50.0
-simulation_name: "{motion}/1000/{psnr}-{delta}/{seed}/exp.0/"
 tracking_method: koft
 
 detection:

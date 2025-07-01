@@ -11,7 +11,10 @@ simulator:
   imaging_config:
     delta: 50.0
     noise: 0.1
-    psnr: 1.5  # SNR in db (10 log_10)
+    alpha: 0.2
+    # psnr: 1.5  # SNR in db (10 log_10)
+
+  shape: [1024, 1024]  # 2D videos by default 1M pixels
 
   base_video:
     path: ""
@@ -20,8 +23,9 @@ simulator:
       normalize: True
       q_min: 0.02
       q_max: 0.997
-      smooth_scaling: 1.0
+      smooth_clip: 1.0
 
     start: 0
     stop: -1
     step: 1
+    randomise: True

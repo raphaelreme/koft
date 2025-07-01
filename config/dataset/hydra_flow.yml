@@ -1,0 +1,20 @@
+__default__:
+  - ./default.yml
+
+name: hydra_flow
+
+simulator:
+  base_video:
+    path: $EXPYRUN_CWD/dupre_20140829_1_contracting.tiff
+    transform:
+      aggregate: True
+      normalize: True
+      q_min: 0.02
+      q_max: 0.997
+      smooth_clip: 1.0
+
+  # Now, the video is already the 200 frames centered on the contraction
+  # No need to further select a sequence inside this video
+  # This can be done for other video though
+  # start: 800  # Contraction at frame 900
+  # stop: 1000

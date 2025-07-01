@@ -8,12 +8,14 @@ __default__:
 
 __run__:
   __main__: src.experiments.track:main
-  __name__: "{simulation_name}/{tracking_method}"
-  __output_dir__: $EXPERIMENT_DIR/tracking/  # Main output directoy. True output_dir is output_dir/__name__
+  __name__: "{simulation_name}/{alpha}-{delta}/{seed}/{tracking_method}"
+  __output_dir__: experiment_folder/tracking/  # Main output directoy. True output_dir is output_dir/__name__
 
 real_data: False  # False -> use simulation path / True -> use dupre's data
-simulation_name: springs/1000/1.5-50.0/111/exp.0/
-simulation_path: $DATA_FOLDER/pasteur/simulation/{simulation_name}
+simulation_name: springs_2d
+alpha: 0.2
+delta: 50.0
+simulation_path: $EXPYRUN_CWD/dataset/{simulation_name}/{alpha}-{delta}/{seed}
 tracking_method: skt  # trackmate/emht/skt/koft--/koft
 icy_path: $ICY
 fiji_path: $FIJI

@@ -1,0 +1,30 @@
+simulator:
+  motion:
+    motions:
+      - shape_variation
+      - local_rotation
+      - flow_motion
+    shape_variation:
+      period: 50.0
+      noise: 0.05  # ~ 5% size std (in proportion)
+    local_rotation:
+      period: 50.0
+      noise: 0.1  # ~ 5° angle std (pi / 30)
+    brownian_rotation:
+      noise: 0.0
+    flow_motion:
+      algorithm: farneback
+      downscale: 4
+      farneback:
+        win_size: 20
+    elastic_motion:
+      alpha: 10.0
+      period: 50.0
+      grid_step: 100
+      noise:
+        name: contraction
+        contraction:
+          motion_rate: 40.0
+          motion_size: 10
+          amplitude: 30.0  # times w0 ~ 0.125 to get the real amplitude in pixels: ~ 4pixels
+          noise: 0.0

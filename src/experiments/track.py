@@ -103,7 +103,7 @@ class ExperimentConfig:
                     motion=Motion.MULTI,
                     tree_depth=2,
                 ),
-                timeout=120,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)
+                timeout=180,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)
             )
 
         if self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF):

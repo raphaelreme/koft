@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Union, Sequence
 
+import numpy as np
 import torch
 import tqdm
 
-import byotrack
 
 from .. import optical_flow
 
@@ -15,23 +15,25 @@ class DirectedFlowPropagation:
         self.optflow = optflow
 
     def __call__(
-        self, tracks_matrix: torch.Tensor, forward=True, video: Optional[byotrack.Video] = None
-    ) -> torch.tensor:
+        self,
+        tracks_matrix: torch.Tensor,
+        video: Union[Sequence[np.ndarray], np.ndarray],
+        forward=True,
+        **kwargs,
+    ) -> torch.Tensor:
         """Propagate tracks matrix using an optical flow in a single direction
 
         Args:
             tracks_matrix (torch.Tensor): Tracks data in a single tensor (See `Tracks.tensorize`)
                 Shape: (T, N, D), dtype: float32
+            video (Sequence[np.ndarray] | np.ndarray): Video
             forward (bool): Forward or backward propagation
                 Default: True (Forward)
-            video (Video)
 
         Returns:
             torch.Tensor: Estimation of tracks point in a single direction
                 Shape: (T, N, D), dtype: float32
         """
-        assert video is not None
-
         tracks_matrix = tracks_matrix if forward else torch.flip(tracks_matrix, (0,))
         frame_id = lambda i: i if forward else len(tracks_matrix) - i - 1
 

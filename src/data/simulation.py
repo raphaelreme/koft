@@ -10,7 +10,7 @@ import byotrack
 
 def open_video(simulation_path: pathlib.Path) -> byotrack.Video:
     """Open the video in the simulation folder"""
-    video = byotrack.Video(simulation_path / "video.mp4")
+    video = byotrack.Video(simulation_path / "video.tiff")
     video.set_transform(byotrack.VideoTransformConfig(aggregate=True, normalize=True, q_min=0.00, q_max=1.0))
     return video
 
