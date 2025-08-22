@@ -2,7 +2,7 @@ set -e
 
 # For figures, we run either on springs_2d with seed 0 or hydra_flow without randomizing the sequence and seed 0
 # Required for Fig2
-bash scripts/tip/generate_dataset.sh 0 --simulator.base_video.randomise False
+bash scripts/jrnl/generate_dataset.sh 0 --simulator.base_video.randomise False
 
 # Run OF
 # Required for fig3.a and 3.b

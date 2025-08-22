@@ -81,57 +81,63 @@ $ python scripts/isbi/aggregate_results.py
 Note: *u-track* in the paper corresponds to the results of *trackmate-kf* in the code.
 
 
-## Reproduce (TIP)
+## Reproduce (Extended journal version)
 
 We provide scripts to generate the same dataset that we used and run the same experiments
 
 ```bash
 $ # Generate dataset for 5 differents seeds
-$ bash scripts/tip/generate_dataset.sh 111
-$ bash scripts/tip/generate_dataset.sh 222
-$ bash scripts/tip/generate_dataset.sh 333
-$ bash scripts/tip/generate_dataset.sh 444
-$ bash scripts/tip/generate_dataset.sh 555
+$ bash scripts/jrnl/generate_dataset.sh 111
+$ bash scripts/jrnl/generate_dataset.sh 222
+$ bash scripts/jrnl/generate_dataset.sh 333
+$ bash scripts/jrnl/generate_dataset.sh 444
+$ bash scripts/jrnl/generate_dataset.sh 555
 ```
 
 ### Optical flow
 We benchmarked optical flow algorithms with:
 ```bash
-$ bash scripts/tip/flow.sh 111
-$ bash scripts/tip/flow.sh 222
-$ bash scripts/tip/flow.sh 333
-$ bash scripts/tip/flow.sh 444
-$ bash scripts/tip/flow.sh 555
+$ bash scripts/jrnl/flow.sh 111
+$ bash scripts/jrnl/flow.sh 222
+$ bash scripts/jrnl/flow.sh 333
+$ bash scripts/jrnl/flow.sh 444
+$ bash scripts/jrnl/flow.sh 555
 ```
 
 Aggregating tge results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/tip/aggregate_flow_results.py
+$ python scripts/jrnl/aggregate_flow_results.py
 ```
 
 ### Tracking (SINETRA)
 To reproduce our tracking results on SINETRA, run:
 ```bash
-$ bash scripts/tip/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+$ bash scripts/jrnl/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
 ```
 
 Aggregating the results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/tip/aggregate_results_simulation.py
+$ python scripts/jrnl/aggregate_results_simulation.py
 ```
 
 ### Tracking (Dupre's Hydra)
 To reproduce our tracking results on Hydra vulgaris, run:
 ```bash
-$ bash scripts/tip/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+$ bash scripts/jrnl/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
 ```
 
 Aggregating the results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/tip/aggregate_results_dupre.py
+$ python scripts/jrnl/aggregate_results_dupre.py
+```
+
+### Noise robustness (SINETRA)
+To reproduce our noise robustness analysis on SINETRA, run:
+```bash
+$ bash scripts/jrnl/track_snr.sh $seed  # (111, 222, 333, 444, 555)
 ```
 
 ## Cite us

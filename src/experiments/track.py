@@ -209,7 +209,7 @@ def main(name: str, cfg_data: dict) -> None:
     n_pred = 0.0
     n_true = 0.0
     for detections in detections_sequence:
-        det_metrics = DetectionMetric(1.5).compute_at(
+        det_metrics = DetectionMetric(2.0).compute_at(
             detections, ground_truth["mu"][detections.frame_id], ground_truth["weight"][detections.frame_id]
         )
         tp += det_metrics["tp"]
