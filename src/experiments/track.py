@@ -51,7 +51,7 @@ class DetectionConfig:
 
     def create_detector(self, mu: torch.Tensor) -> byotrack.Detector:
         if self.detector == DetectionMethod.WAVELET:
-            return WaveletDetector(self.wavelet.scale, self.wavelet.k, self.wavelet.min_area)
+            return WaveletDetector(self.wavelet.scale, self.wavelet.k, min_area=self.wavelet.min_area)
 
         return FakeDetector(mu, self.fake.measurement_noise, self.fake.fpr, self.fake.fnr, False)
 
