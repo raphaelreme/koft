@@ -1,26 +1,26 @@
 """Measure optical flow performances"""
 
+from __future__ import annotations
+
 import dataclasses
 import enum
 import pathlib
-from typing import Dict, List
 import warnings
 
+import byotrack
 import cv2
 import dacite
 import numpy as np
 import torch
-import tqdm  # type: ignore
-import yaml  # type: ignore
-
-import byotrack
+import tqdm
+import yaml
 from byotrack.implementation.refiner.stitching import emc2
 
-from .. import optical_flow
-from ..data import dupre, simulation, stitching
-from ..metrics import stitching as stitching_metrics
-from ..optical_flow import raft, vxm, propagate
-from ..utils import enforce_all_seeds
+from src import optical_flow
+from src.data import dupre, simulation, stitching  # noqa: TC001
+from src.metrics import stitching as stitching_metrics
+from src.optical_flow import propagate, raft, vxm
+from src.utils import enforce_all_seeds
 
 
 class OpticalFlow(enum.Enum):
@@ -48,14 +48,14 @@ class ExperimentConfig:
     def build_of(self) -> optical_flow.OptFlow:
         """Build an optical flow"""
         if self.flow is OpticalFlow.NONE:
-            return optical_flow.OptFlow(lambda x, y: np.zeros((*x.shape, 2), dtype=np.float32), scale=8, blur=0.0)
+            return optical_flow.OptFlow(lambda x, _: np.zeros((*x.shape, 2), dtype=np.float32), scale=8, blur=0.0)
 
         if self.flow is OpticalFlow.FARNEBACK:
-            cv2_farneback = cv2.FarnebackOpticalFlow_create(winSize=20)  # type: ignore
+            cv2_farneback = cv2.FarnebackOpticalFlow_create(winSize=20)  # type: ignore[attr-defined]
             return optical_flow.OptFlow(lambda x, y: cv2_farneback.calc(x, y, None), scale=self.scale, blur=self.blur)
 
         if self.flow is OpticalFlow.TVL1:
-            cv2_tvl1 = cv2.optflow.DualTVL1OpticalFlow_create(lambda_=0.05)  # type: ignore
+            cv2_tvl1 = cv2.optflow.DualTVL1OpticalFlow_create(lambda_=0.05)  # type: ignore[attr-defined]
             return optical_flow.OptFlow(lambda x, y: cv2_tvl1.calc(x, y, None), scale=self.scale, blur=self.blur)
 
         if self.flow is OpticalFlow.RAFT:
@@ -63,12 +63,14 @@ class ExperimentConfig:
 
         # VXM
         if self.scale != 4.0 or self.blur != 1.0:
-            warnings.warn("Except you have retrained VXM model, it has been trained with scale=4 and blur=1.0")
+            warnings.warn(
+                "Except you have retrained VXM model, it has been trained with scale=4 and blur=1.0", stacklevel=2
+            )
         return optical_flow.OptFlow(vxm.Vxm(), scale=self.scale, blur=self.blur)
 
 
 def frame2frame_dist(
-    video: byotrack.Video, tracks: List[byotrack.Track], optflow: optical_flow.OptFlow
+    video: byotrack.Video, tracks: list[byotrack.Track], optflow: optical_flow.OptFlow
 ) -> torch.Tensor:
     """Build frame to frame distance matrix"""
     tracks_matrix = byotrack.Track.tensorize(tracks)
@@ -96,7 +98,7 @@ def frame2frame_dist(
     return torch.tensor(dist).to(torch.float32)
 
 
-def tracklet2tracklet_dist(video: byotrack.Video, tracklets: List[byotrack.Track], optflow) -> np.ndarray:
+def tracklet2tracklet_dist(video: byotrack.Video, tracklets: list[byotrack.Track], optflow) -> np.ndarray:
     """Compute the tracklet to tracklet positional distance after optical flow correction"""
     stitcher = emc2.EMC2Stitcher()  # Default stitcher
 
@@ -109,12 +111,10 @@ def tracklet2tracklet_dist(video: byotrack.Video, tracklets: List[byotrack.Track
     skip_mask = stitcher.skip_computation(tracklets, stitcher.max_overlap, stitcher.max_dist, stitcher.max_gap)
     ranges = np.array([(track.start, track.start + len(track)) for track in tracklets])
 
-    return emc2._fast_emc2_dist(  # pylint: disable=protected-access
-        propagation_matrix.numpy(), skip_mask.numpy(), ranges
-    )
+    return emc2._fast_emc2_dist(propagation_matrix.numpy(), skip_mask.numpy(), ranges)  # noqa: SLF001
 
 
-def hard_thresh(tracks: List[byotrack.Track]) -> float:
+def hard_thresh(tracks: list[byotrack.Track]) -> float:
     tracks_tensor = byotrack.Track.tensorize(tracks)
 
     # Compute frame-to-frame errors without flow
@@ -130,13 +130,13 @@ def main(name: str, cfg_data: dict) -> None:
     cfg = dacite.from_dict(ExperimentConfig, cfg_data, dacite.Config(cast=[pathlib.Path, tuple, enum.Enum]))
     enforce_all_seeds(cfg.seed)
 
-    metrics: Dict[str, Dict[str, float]] = {}
+    metrics: dict[str, dict[str, float]] = {}
 
     # Load of
     optflow = cfg.build_of()
 
     ##  Frame to frame metric
-    f2f_dist: Dict[str, torch.Tensor] = {}
+    f2f_dist: dict[str, torch.Tensor] = {}
 
     if cfg.run_dupre:
         # Dupre
@@ -185,7 +185,5 @@ def main(name: str, cfg_data: dict) -> None:
         metrics["stitching"] = {"ap": stitching_ap}
         print(f"Stitching Average precision: {stitching_ap:.2f}")
 
-    with open("metrics.yml", "w", encoding="utf-8") as file:
-        file.write(yaml.dump(metrics))
-
+    pathlib.Path("metrics.yml").write_text(yaml.dump(metrics))
     torch.save(f2f_dist, "f2f_dist.pt")

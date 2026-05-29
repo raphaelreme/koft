@@ -5,21 +5,21 @@ import pathlib
 
 import dacite
 import torch
-import tqdm  # type: ignore
-import yaml  # type: ignore
+import tqdm
+import yaml
 
+from src.data import simulation
+from src.koft import OptFlowExtraction, TwoUpdateKOFTracker, constant_koft_filter
+from src.metrics.detections import DetectionMetric
+from src.metrics.tracking import compute_tracking_metrics
+from src.optical_flow import farneback
+from src.skt import MatchingConfig
+from src.utils import enforce_all_seeds
 
-from ..data import simulation
-from ..metrics.detections import DetectionMetric
-from ..metrics.tracking import compute_tracking_metrics
-from ..skt import MatchingConfig
-from ..koft import constant_koft_filter, OptFlowExtraction, TwoUpdateKOFTracker
-from ..optical_flow import farneback
-from ..utils import enforce_all_seeds
 from .track import ExperimentConfig, TrackingMethod
 
 
-def main(name: str, cfg_data: dict) -> None:
+def main(name: str, cfg_data: dict) -> None:  # noqa: PLR0915
     print("Running:", name)
     print(yaml.dump(cfg_data))
     cfg = dacite.from_dict(ExperimentConfig, cfg_data, dacite.Config(cast=[pathlib.Path, tuple, enum.Enum]))
@@ -27,8 +27,8 @@ def main(name: str, cfg_data: dict) -> None:
     enforce_all_seeds(cfg.seed)
 
     # Ensure we are with a correct config
-    assert not cfg.real_data
-    assert cfg.tracking_method == TrackingMethod.KOFT
+    assert not cfg.real_data  # noqa: S101
+    assert cfg.tracking_method == TrackingMethod.KOFT  # noqa: S101
 
     video = simulation.open_video(cfg.simulation_path)
     ground_truth = simulation.load_ground_truth(cfg.simulation_path)
@@ -55,7 +55,7 @@ def main(name: str, cfg_data: dict) -> None:
     print("f1", 2 * tp / (n_true + n_pred) if n_pred + n_true else 1.0)
 
     best_metrics = {}
-    for of_noise in tqdm.tqdm([1.0, 2.0, 5.0]):  # Create a linker for each of_noise=
+    for of_noise in tqdm.tqdm([1.0, 2.0, 5.0]):  # Create a linker for each of_noise
         kalman_filter = constant_koft_filter(
             torch.tensor(cfg.kalman.detection_noise),
             torch.tensor(of_noise),
@@ -76,7 +76,7 @@ def main(name: str, cfg_data: dict) -> None:
             )
             try:
                 tracks = linker.run(video, detections_sequence)
-            except Exception as exc:  # pylint: disable=broad-exception-caught
+            except Exception as exc:  # noqa: BLE001
                 tqdm.tqdm.write(str(exc))
                 tracks = []  # Tracking failed (For instance: timeout in EMHT)
 
@@ -109,5 +109,4 @@ def main(name: str, cfg_data: dict) -> None:
 
         best_metrics[of_noise] = metrics[best_thresh]
 
-    with open("best_metrics.yml", "w", encoding="utf-8") as file:
-        file.write(yaml.dump(best_metrics))
+    pathlib.Path("best_metrics.yml").write_text(yaml.dump(best_metrics))

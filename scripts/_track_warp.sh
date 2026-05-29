@@ -1,5 +1,5 @@
 set -e
-
+    
 # Run for different f1/psnr/delta/seed with warped (CP/CV) SKT, (CP/CV) trackmate and eMHT
 $RUN_KOFT_ENV expyrun config/track/simulator.yml --simulation_name $1 --alpha $2 --delta $3 --seed $6 --tracking_method skt --warp True --detection.detector $4 --detection.fake.fpr $5 --detection.fake.fnr $5 --kalman.order 0 --__run__.__output_dir__ experiment_folder/tracking_warp
 $RUN_KOFT_ENV expyrun config/track/simulator.yml --simulation_name $1 --alpha $2 --delta $3 --seed $6 --tracking_method skt --warp True --detection.detector $4 --detection.fake.fpr $5 --detection.fake.fnr $5 --kalman.order 1 --__run__.__output_dir__ experiment_folder/tracking_warp

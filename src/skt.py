@@ -1,17 +1,21 @@
+from __future__ import annotations
+
 import dataclasses
 import enum
-from typing import Collection, Iterable, List, Optional
-
-import filterpy.common  # type: ignore
-import numpy as np
-import torch
-import tqdm  # type: ignore
+from typing import TYPE_CHECKING
 
 import byotrack
+import filterpy.common  # type: ignore[import-untyped]
+import numpy as np
 import pylapy
+import torch
+import tqdm
 
-from .kalman_filter import KalmanFilter, GaussianState
 from .greedy_lap import greedy_assignment_solver
+from .kalman_filter import GaussianState, KalmanFilter
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class PartialTrack:
@@ -60,7 +64,7 @@ class PartialTrack:
     def is_active(self) -> bool:
         return self.track_state < 2
 
-    def update(self, mean: torch.Tensor, covariance: torch.Tensor, measure: Optional[torch.Tensor]) -> None:
+    def update(self, mean: torch.Tensor, covariance: torch.Tensor, measure: torch.Tensor | None) -> None:
         """Should be called only if the track is active"""
         self._mean.append(mean.clone())
         self._covariance.append(covariance.clone())
@@ -80,9 +84,8 @@ class PartialTrack:
         self._measure.append(measure.clone())
         self.last_measurement = 0
 
-        if self.track_state == PartialTrack.TrackState.INITIATED:
-            if len(self) >= self.CONFIRMED_AT:
-                self.track_state = PartialTrack.TrackState.CONFIRMED
+        if self.track_state == PartialTrack.TrackState.INITIATED and len(self) >= self.CONFIRMED_AT:
+            self.track_state = PartialTrack.TrackState.CONFIRMED
 
     @property
     def points(self) -> torch.Tensor:
@@ -174,8 +177,8 @@ class SimpleKalmanTracker(byotrack.Linker):
     def __init__(self, kalman_filter: KalmanFilter, match_cfg: MatchingConfig) -> None:
         super().__init__()
         self.kalman_filter = kalman_filter
-        self.tracks: List[PartialTrack] = []
-        self.active_tracks: List[PartialTrack] = []
+        self.tracks: list[PartialTrack] = []
+        self.active_tracks: list[PartialTrack] = []
         self.state = GaussianState(  # Current state of active tracks
             torch.zeros((0, self.kalman_filter.state_dim, 1)),
             torch.zeros((0, self.kalman_filter.state_dim, self.kalman_filter.state_dim)),
@@ -184,8 +187,8 @@ class SimpleKalmanTracker(byotrack.Linker):
         self.match_cfg = match_cfg
 
     def run(
-        self, video: Iterable[np.ndarray], detections_sequence: Collection[byotrack.Detections]
-    ) -> List[byotrack.Track]:
+        self, _video: Sequence[np.ndarray] | np.ndarray, detections_sequence: Sequence[byotrack.Detections]
+    ) -> list[byotrack.Track]:
         # Reset tracks and states
         self.tracks = []
         self.active_tracks = []
@@ -211,7 +214,7 @@ class SimpleKalmanTracker(byotrack.Linker):
             )
         return tracks
 
-    def get_tracks_at_true_detections(self) -> List[byotrack.Track]:
+    def get_tracks_at_true_detections(self) -> list[byotrack.Track]:
         """Get non smoothed tracks, with only points matching a detection position
 
         Should be called only after a `run`
@@ -224,9 +227,7 @@ class SimpleKalmanTracker(byotrack.Linker):
             tracks.append(
                 byotrack.Track(
                     track.start,
-                    torch.cat(
-                        [m[None, :2, 0] for m in track._measure[: len(track)]]  # pylint: disable=protected-access
-                    ),
+                    torch.cat([m[None, :2, 0] for m in track._measure[: len(track)]]),  # noqa: SLF001
                     track.track_id,
                 )
             )
@@ -288,7 +289,7 @@ class SimpleKalmanTracker(byotrack.Linker):
 
         return torch.tensor(links.astype(np.int32))
 
-    def update(self, detections: byotrack.Detections):
+    def update(self, detections: byotrack.Detections) -> None:
         prior = self.kalman_filter.predict(self.state)
         projection = self.kalman_filter.project(prior)
         positions = detections.position[..., None].clone()  # Shape m, d, 1

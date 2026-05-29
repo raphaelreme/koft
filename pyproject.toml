@@ -1,10 +1,110 @@
-[build-system]
-requires = [
-    "setuptools>=46.4.0",
-    "wheel"
+[project]
+name = "koft"
+version = "1.0.0"
+description = "Code to reproduce the KOFT paper"
+readme = "README.md"
+authors = [
+    { name = "Raphael Reme", email = "raphaelreme-dev@protonmail.com" }
 ]
-build-backend = "setuptools.build_meta"
+maintainers = [
+    { name = "Raphael Reme", email = "raphaelreme-dev@protonmail.com" }
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+requires-python = ">=3.10"
+dependencies = [
+    "byotrack",
+    "dacite",
+    "deep-trainer",
+    "expyrun",
+    "ipywidgets",
+    "filterpy",
+    "matplotlib",
+    "notebook",
+    "opencv-contrib-python < 4.13",
+    "pandas",
+    "scikit-learn",
+    "scipy",
+    "sinetra",
+    "torch",
+    "torch-kf",
+    "torchvision",
+    "tqdm",
+    "typing-extensions ; python_full_version < '3.12'",
+    "neurite>=0.2",
+]
 
 
-[tool.black]
-line-length=120
+[dependency-groups]
+dev = [
+    "mypy",
+    "prek",
+    "ruff",
+    "scipy-stubs",
+    "types-tqdm",
+    "types-pyyaml",
+]
+
+
+[tool.uv]
+python-preference = "only-managed"
+default-groups = "all"
+
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+
+# Format
+format.docstring-code-format = true
+format.indent-style = "space"
+format.quote-style = "double"
+format.line-ending = "lf"
+format.skip-magic-trailing-comma = false
+
+# Lint
+lint.select = ["ALL"]
+
+lint.ignore = [
+    "ANN001",  # Checked by mypy which allows default args not to be typed
+    "COM812",  # Recommended by ruff as we use the formatter
+    "EM", "TRY003",  # Let's rely on standard exceptions
+    "ERA001",  # Allow commented code
+    "FIX", "TD",  # Ignore TODO, FIXME, XXX
+    "T201",  # Print
+    "INP001",  # Implicit package
+    "PLR2004",  # Magic constant
+    "D",  # Docstring
+    "FBT",  # Boolean trap
+    "NPY002",  # Numpy random without generators
+]
+
+lint.future-annotations = true
+lint.flake8-annotations.allow-star-arg-any = true
+lint.flake8-annotations.ignore-fully-untyped = true
+lint.flake8-annotations.mypy-init-return = true
+lint.pep8-naming.ignore-names = [
+    "i",
+    "j",
+    "k",
+    "n",
+    "t",
+]
+lint.pydocstyle.convention = "google"
+lint.pylint.max-args = 8
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["INP001", "D103", "S101", "ANN201", "SLF001", "T201", "PLR2004", "ERA001", "NPY002"]
+"*.ipynb" = ["ERA001", "T201", "SLF001", "PLR2004", "E501"]
+
+
+[tool.mypy]
+enable_error_code = ["ignore-without-code"]
+check_untyped_defs = true
+
+
+[tool.typos.default.extend-words]
+Tung = "Tung"
+fpr = "fpr"

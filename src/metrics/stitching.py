@@ -1,9 +1,8 @@
 """Tracklet stitching metrics from Reme (ISBI_2023)"""
 
 import numpy as np
-import tqdm
-
 import pylapy
+import tqdm
 
 
 def make_increasing(points):
@@ -11,9 +10,7 @@ def make_increasing(points):
     increasing = []
     max_point = 0.0
     for point in points:
-        if point > max_point:
-            max_point = point
-
+        max_point = max(max_point, point)
         increasing.append(max_point)
 
     return increasing
@@ -32,8 +29,8 @@ def compute_ap(recalls, precisions) -> float:
         float: Average precision metrics (precision is set to 0 for each point without recall)
     """
     # Let's put the first point as 1 of precision for 0 of recall by default (when predicting no links)
-    recalls = [0.0] + recalls
-    precisions = [1.0] + precisions
+    recalls = [0.0, *recalls]
+    precisions = [1.0, *precisions]
 
     average_precision = 0.0
     for i, precision in enumerate(precisions[:-1]):  # Drop last (anyway the recall diff is null)

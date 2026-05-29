@@ -1,16 +1,21 @@
-import enum
-from typing import Collection, Iterable, Sequence
+from __future__ import annotations
 
-import filterpy.common  # type: ignore
-import numpy as np
-import torch
-import tqdm  # type: ignore
+import enum
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import byotrack
+import filterpy.common  # type: ignore[import-untyped]
+import numpy as np
+import torch
+import tqdm
 
-from .kalman_filter import KalmanFilter, GaussianState
-from .skt import MatchingConfig, SimpleKalmanTracker
-from .optical_flow import OptFlow
+from .kalman_filter import GaussianState, KalmanFilter
+from .skt import SimpleKalmanTracker
+
+if TYPE_CHECKING:
+    from .optical_flow import OptFlow
+    from .skt import MatchingConfig
 
 
 def constant_koft_filter(
@@ -40,7 +45,7 @@ def constant_koft_filter(
 
     """
 
-    assert order >= 1, "Velocity is measured and has to be set"
+    assert order >= 1, "Velocity is measured and has to be set"  # noqa: S101
 
     measurement_std = torch.cat((torch.broadcast_to(pos_std, (dim,)), torch.broadcast_to(vel_std, (dim,))))
     process_std = torch.broadcast_to(process_std, (dim,))
@@ -79,9 +84,9 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
         self.flow = np.zeros((1, 1, 2))
 
     def run(
-        self, video: Iterable[np.ndarray], detections_sequence: Collection[byotrack.Detections]
-    ) -> Collection[byotrack.Track]:
-        assert isinstance(video, Sequence), "Only indexable videos are supported"
+        self, video: Sequence[np.ndarray] | np.ndarray, detections_sequence: Sequence[byotrack.Detections]
+    ) -> list[byotrack.Track]:
+        assert isinstance(video, Sequence), "Only indexable videos are supported"  # noqa: S101
 
         # Reset tracks and states
         self.tracks = []
@@ -96,7 +101,7 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
         src = self.opt_flow.prepare(frame)
 
         for detections in tqdm.tqdm(detections_sequence):
-            try:
+            try:  # noqa: SIM105
                 # We could compute flow from t-1 to t, or t-1 to t+1
                 # But it is much better to compute flow from
                 # frame = video[max(detections.frame_id - 1, 0)]
@@ -126,7 +131,7 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
             )
         return tracks
 
-    def update(self, detections: byotrack.Detections):
+    def update(self, detections: byotrack.Detections) -> None:
         prior = self.kalman_filter.predict(self.state)
         projection = self.kalman_filter.project(prior)
         positions = detections.position[..., None].clone()  # Shape m, d, 1
@@ -205,7 +210,7 @@ class TwoUpdateKOFTracker(SingleUpdateKOFTracker):
         self.opt_flow_at = opt_flow_at
         self.always_update_vel = always_update_vel
 
-    def update(self, detections: byotrack.Detections):
+    def update(self, detections: byotrack.Detections) -> None:
         projection = self.kalman_filter.project(
             self.state,
             # self.kalman_filter.measurement_matrix[:2],  # Let's also project velocity (useful for matching)

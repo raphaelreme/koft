@@ -1,15 +1,19 @@
-import os
-import sys
+from __future__ import annotations
 
-import numpy as np
+import os
+import pathlib
+import sys
+from typing import TYPE_CHECKING
+
 import torch
+
+if TYPE_CHECKING:
+    import numpy as np
 
 CWD = os.environ.get("EXPYRUN_CWD", ".")
 sys.path.append(f"{CWD}/voxelmorph/")
 os.environ["NEURITE_BACKEND"] = "pytorch"
 os.environ["VXM_BACKEND"] = "pytorch"
-
-import voxelmorph as vxm  # type: ignore
 
 
 class Vxm:
@@ -21,9 +25,11 @@ class Vxm:
     """
 
     def __init__(self, model_path=f"{CWD}/vxm.pt", in_shape=(256, 256), channels=1) -> None:
-        assert os.path.exists(model_path), "To use vxm optical flow you must first train and save a model"
+        import voxelmorph as vxm  # type: ignore[import-not-found]  # noqa: PLC0415
 
-        self.model = vxm.networks.VxmDense(in_shape, src_feats=channels, trg_feats=channels, int_steps=0)
+        assert pathlib.Path(model_path).exists(), "To use vxm optical flow you must first train and save a model"  # noqa: S101
+
+        self.model = vxm.networks.VxmDense(in_shape, src_feats=channels, trg_feats=channels, int_steps=0)  # type: ignore[attr-defined]
         self.model.flow.bias = None
         self.model.load_state_dict(torch.load(model_path, map_location="cpu"))
         self.model = self.model.cpu().eval()

@@ -1,19 +1,24 @@
+from __future__ import annotations
+
 import os
 import sys
-from typing import Collection, Dict
-
-import numpy as np
-from scipy.spatial.distance import cdist  # type: ignore
-import torch
+from typing import TYPE_CHECKING
 
 import byotrack
+import numpy as np
+import torch
+from scipy.spatial.distance import cdist  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 sys.path.append(f"{os.environ.get('EXPYRUN_CWD', '.')}/TrackEval/")
 
-import trackeval  # type: ignore
+
+import trackeval  # type: ignore[import-not-found]
 
 
-def simulator_to_eval(mu: torch.Tensor, weight: torch.Tensor, weight_limit=0.0, is_gt=True) -> Dict:
+def simulator_to_eval(mu: torch.Tensor, weight: torch.Tensor, weight_limit=0.0, is_gt=True) -> dict:
     """Convert simulator data (mu, weight) into compatible trackeval data
 
     Args:
@@ -53,15 +58,15 @@ def simulator_to_eval(mu: torch.Tensor, weight: torch.Tensor, weight_limit=0.0, 
                 continue
             ids.append(i)
             dets.append(mu[t, id_].tolist())
-            data[f"num_{name}_dets"] += 1  # type: ignore
+            data[f"num_{name}_dets"] += 1  # type: ignore[operator]
 
-        data[f"{name}_ids"].append(np.array(ids))  # type: ignore
-        data[f"{name}_dets"].append(np.array(dets))  # type: ignore
+        data[f"{name}_ids"].append(np.array(ids))  # type: ignore[attr-defined]
+        data[f"{name}_dets"].append(np.array(dets))  # type: ignore[attr-defined]
 
     return data
 
 
-def tracks_to_eval(tracks: Collection[byotrack.Track], is_gt=False) -> Dict:
+def tracks_to_eval(tracks: Collection[byotrack.Track], is_gt=False) -> dict:
     """Convert tracks into compatible data for trackeval"""
     mu = byotrack.Track.tensorize(tracks)
     # Set weight to 0 for nans and set a weight_limit at 0.75 to drop them
@@ -72,18 +77,18 @@ def tracks_to_eval(tracks: Collection[byotrack.Track], is_gt=False) -> Dict:
     return simulator_to_eval(mu, weight, 0.75, is_gt)
 
 
-def add_similarity(data: Dict):
+def add_similarity(data: dict) -> None:
     """Add similarity to data (modify data in place)"""
     similarity = []
-    for gt_dets_t, tracker_dets_t in zip(data["gt_dets"], data["tracker_dets"]):
+    for gt_dets_t, tracker_dets_t in zip(data["gt_dets"], data["tracker_dets"], strict=True):
         dist = cdist(gt_dets_t, tracker_dets_t)
         similarity.append(np.maximum(0, 1 - dist / 5))
     data["similarity_scores"] = similarity
 
 
 def compute_tracking_metrics(
-    tracks: Collection[byotrack.Track], ground_truth: Dict[str, torch.Tensor]
-) -> Dict[str, torch.Tensor]:
+    tracks: Collection[byotrack.Track], ground_truth: dict[str, torch.Tensor]
+) -> dict[str, torch.Tensor]:
     """Compute HOTA at different thresholds
 
     Keys:

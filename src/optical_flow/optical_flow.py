@@ -1,9 +1,14 @@
-from typing import Callable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import cv2
-import matplotlib as mpl  # type: ignore
+import matplotlib as mpl  # type: ignore[import-untyped]
 import numpy as np
-import scipy.ndimage  # type: ignore
+import scipy.ndimage  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class OptFlow:
@@ -97,13 +102,13 @@ class OptFlow:
         return points + self.flow_at(flow, points, self.scale)
 
 
-def show_flow_on_video(video, optflow: OptFlow):
+def show_flow_on_video(video, optflow: OptFlow) -> None:
     """Display optical flow on a video
 
     Display the video with control points above that moves following the flow
     """
     hsv = mpl.colormaps["hsv"]
-    colors = list(map(lambda x: x[:3], map(hsv, [i / 200 for i in range(200)])))
+    colors = [x[:3] for x in map(hsv, [i / 200 for i in range(200)])]
 
     display = 0
 

@@ -1,11 +1,16 @@
-from typing import Collection, Iterable
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import byotrack
 import cv2
-import numpy as np
 import torch
 import tqdm
 
-import byotrack
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy as np
 
 
 class FakeDetector(byotrack.Detector):  # TODO: include weight
@@ -17,11 +22,11 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
         self.n_particles = mu.shape[1]
         self.generate_outside_particles = generate_outside_particles
 
-    def run(self, video: Iterable[np.ndarray]) -> Collection[byotrack.Detections]:
+    def run(self, video: Sequence[np.ndarray] | np.ndarray) -> list[byotrack.Detections]:
         detections_sequence = []
 
         for k, frame in enumerate(tqdm.tqdm(video)):
-            frame = frame[..., 0]  # Drop channel
+            frame = frame[..., 0]  # Drop channel  # noqa: PLW2901
             shape = torch.tensor(frame.shape)
 
             detected = torch.rand(self.n_particles) >= self.fnr  # Miss some particles (randomly)

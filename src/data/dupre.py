@@ -1,18 +1,17 @@
 """For loading dupre's track / video"""
 
+from __future__ import annotations
 
 import dataclasses
 import functools
-import pathlib
-from typing import List, Tuple
-
-import numpy as np
-import pandas as pd  # type: ignore
-import torch
+import pathlib  # noqa: TC003
 
 import byotrack
+import numpy as np
+import pandas as pd  # type: ignore[import-untyped]
+import torch
 
-from .. import rts_smoothing
+from src import rts_smoothing
 
 
 @dataclasses.dataclass
@@ -37,7 +36,7 @@ class DupreDataConfig:
         )
         return video
 
-    def raw_tracks(self) -> List[byotrack.Track]:
+    def raw_tracks(self) -> list[byotrack.Track]:
         tracks_data = np.array(pd.read_csv(self.tracks, header=None))
 
         identifiers = np.unique(tracks_data[:, 0])
@@ -46,13 +45,13 @@ class DupreDataConfig:
 
         for identifier in identifiers:
             track_data = tracks_data[tracks_data[:, 0] == identifier]
-            assert len(track_data) == 201 and (track_data[:, 1] == np.arange(201)).all(), identifier
+            assert len(track_data) == 201 and (track_data[:, 1] == np.arange(201)).all(), identifier  # noqa: PT018, S101
             points = torch.tensor(track_data[:, 2:]).to(torch.float32).flip(dims=(-1,))
             tracks.append(byotrack.Track(0, points, identifier))
 
         return tracks
 
-    def _smoothing(self) -> Tuple[List[byotrack.Track], np.ndarray]:
+    def _smoothing(self) -> tuple[list[byotrack.Track], np.ndarray]:
         raw_tracks = self.raw_tracks()
 
         measured_positions = byotrack.Track.tensorize(raw_tracks).permute(1, 0, 2)
@@ -67,10 +66,10 @@ class DupreDataConfig:
 
         return smoothed_tracks, smoothed_state
 
-    def smoothed_tracks(self) -> List[byotrack.Track]:
+    def smoothed_tracks(self) -> list[byotrack.Track]:
         return self._smoothing()[0]
 
-    def cleaned_tracks(self) -> List[byotrack.Track]:
+    def cleaned_tracks(self) -> list[byotrack.Track]:
         smoothed_tracks, smoothed_state = self._smoothing()
         num_neighbors = 10
 
@@ -86,6 +85,6 @@ class DupreDataConfig:
 
         valid_tracks = []
         for i in np.arange(len(smoothed_tracks))[~invalid]:
-            valid_tracks.append(smoothed_tracks[i])
+            valid_tracks.append(smoothed_tracks[i])  # noqa: PERF401
 
         return valid_tracks

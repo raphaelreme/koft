@@ -1,25 +1,28 @@
-from typing import Dict, Iterable, List, Optional
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import pylapy
 import torch
 
-import byotrack
-import pylapy
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    import byotrack
 
 
-def make_increasing(points: Iterable[float]) -> List[float]:
+def make_increasing(points: Iterable[float]) -> list[float]:
     """Used to make monotone recalls and precision"""
     increasing = []
     max_point = 0.0
     for point in points:
-        if point > max_point:
-            max_point = point
-
+        max_point = max(max_point, point)
         increasing.append(max_point)
 
     return increasing
 
 
-def compute_ap(recalls: List[float], precisions: List[float]) -> float:
+def compute_ap(recalls: list[float], precisions: list[float]) -> float:
     """Compute average precision with AP = \\sum_k [R_{k+1} - R_k] * P_k
 
     Handle non monotone recall or precisions. (Recalls is globally increasing,
@@ -37,8 +40,8 @@ def compute_ap(recalls: List[float], precisions: List[float]) -> float:
     precisions.reverse()
 
     # Extend the curve
-    recalls = [0.0] + recalls + [max(recalls)]
-    precisions = [max(precisions)] + precisions + [0.0]
+    recalls = [0.0, *recalls, max(recalls)]
+    precisions = [max(precisions), *precisions, 0.0]
 
     average_precision = 0.0
     for i, precision in enumerate(precisions[:-1]):
@@ -48,8 +51,6 @@ def compute_ap(recalls: List[float], precisions: List[float]) -> float:
 
 
 class DetectionMetric:
-    """"""
-
     def __init__(self, dist_thresh: float, greedy=True) -> None:
         self.dist_thresh = dist_thresh
         self.greedy = greedy
@@ -59,10 +60,10 @@ class DetectionMetric:
         self,
         detections: byotrack.Detections,
         true_position: torch.Tensor,
-        true_weight: Optional[torch.Tensor] = None,
+        true_weight: torch.Tensor | None = None,
         prob_thresh=0.0,
         weight_thresh=0.0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Compute the precision, recall and f1 at a given probability and weight thresholds"""
         if true_weight is not None:
             true_position = true_position[true_weight > weight_thresh]
@@ -96,7 +97,7 @@ class DetectionMetric:
         self,
         detections: byotrack.Detections,
         true_position: torch.Tensor,
-        true_weight: Optional[torch.Tensor] = None,
+        true_weight: torch.Tensor | None = None,
         prob_thresh=0.0,
     ) -> float:
         recalls = []
@@ -113,7 +114,7 @@ class DetectionMetric:
         self,
         detections: byotrack.Detections,
         true_position: torch.Tensor,
-        true_weight: Optional[torch.Tensor] = None,
+        true_weight: torch.Tensor | None = None,
         weight_thresh=0.0,
     ) -> float:
         recalls = []

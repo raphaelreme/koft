@@ -1,5 +1,4 @@
 import dataclasses
-from typing import Optional
 
 import torch
 import torch.linalg
@@ -11,6 +10,8 @@ import torch.linalg
 # We could try to implement a numba fast version with a threshold to compare only with few close measurements.
 # But the simple approach of computing once the inverse covariance, and then only performing matmul works pretty well
 # (And can be sent to GPU)
+
+# XXX: Switch to torch-kf
 
 
 @dataclasses.dataclass
@@ -30,7 +31,7 @@ class GaussianState:
 
     mean: torch.Tensor
     covariance: torch.Tensor
-    precision: Optional[torch.Tensor] = None
+    precision: torch.Tensor | None = None
 
 
 class KalmanFilter:
@@ -84,8 +85,8 @@ class KalmanFilter:
     def predict(
         self,
         state: GaussianState,
-        process_matrix: Optional[torch.Tensor] = None,
-        process_noise: Optional[torch.Tensor] = None,
+        process_matrix: torch.Tensor | None = None,
+        process_noise: torch.Tensor | None = None,
     ) -> GaussianState:
         """Prediction from the given state
 
@@ -119,8 +120,8 @@ class KalmanFilter:
     def project(
         self,
         state: GaussianState,
-        measurement_matrix: Optional[torch.Tensor] = None,
-        measurement_noise: Optional[torch.Tensor] = None,
+        measurement_matrix: torch.Tensor | None = None,
+        measurement_noise: torch.Tensor | None = None,
         precompute_precision=True,
     ) -> GaussianState:
         """Project the current state (usually the prior) onto the measurement space
@@ -163,9 +164,9 @@ class KalmanFilter:
         self,
         state: GaussianState,
         measure: torch.Tensor,
-        projection: Optional[GaussianState] = None,
-        measurement_matrix: Optional[torch.Tensor] = None,
-        measurement_noise: Optional[torch.Tensor] = None,
+        projection: GaussianState | None = None,
+        measurement_matrix: torch.Tensor | None = None,
+        measurement_noise: torch.Tensor | None = None,
     ) -> GaussianState:
         """Compute the posterior estimation by integrating a new measure into the state
 

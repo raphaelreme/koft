@@ -13,4 +13,4 @@ seed: 111
 n_frames: 200
 display: False
 dataset_path: $EXPYRUN_CWD/dataset  # Save to the local dataset folder
-format: python_only  # It will not generate the .tiff files for annotations. Change to "full" if needed.
+format: full

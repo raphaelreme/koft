@@ -1,27 +1,38 @@
+from __future__ import annotations
+
 import dataclasses
 import enum
 import pathlib
-from typing import Collection, List
-
-import dacite
-import torch
-import tqdm  # type: ignore
-import yaml  # type: ignore
+from typing import TYPE_CHECKING
 
 import byotrack
+import dacite
+import torch
+import tqdm
+import yaml
 from byotrack.implementation.detector.wavelet import WaveletDetector
 from byotrack.implementation.linker.icy_emht import EMHTParameters, IcyEMHTLinker, Motion
 from byotrack.implementation.linker.trackmate.trackmate import TrackMateLinker, TrackMateParameters
 from byotrack.implementation.refiner.interpolater import ForwardBackwardInterpolater
 
-from ..data import simulation, dupre
-from ..detector import FakeDetector
-from ..metrics.detections import DetectionMetric
-from ..metrics.tracking import compute_tracking_metrics
-from ..skt import constant_kalman_filter, Dist, Method, MatchingConfig, SimpleKalmanTracker, PartialTrack
-from ..koft import constant_koft_filter, OptFlowExtraction, SingleUpdateKOFTracker, TwoUpdateKOFTracker
-from ..optical_flow import farneback, warp
-from ..utils import enforce_all_seeds
+from src.data import dupre, simulation  # noqa: TC001
+from src.detector import FakeDetector
+from src.koft import OptFlowExtraction, SingleUpdateKOFTracker, TwoUpdateKOFTracker, constant_koft_filter
+from src.metrics.detections import DetectionMetric
+from src.metrics.tracking import compute_tracking_metrics
+from src.optical_flow import farneback, warp
+from src.skt import (
+    Dist,
+    MatchingConfig,
+    Method,  # noqa: TC001
+    PartialTrack,
+    SimpleKalmanTracker,
+    constant_kalman_filter,
+)
+from src.utils import enforce_all_seeds, kill_java_in_our_pgrp_pkill
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 class DetectionMethod(enum.Enum):
@@ -161,7 +172,7 @@ class ExperimentConfig:
             self.kalman.always_update_velocities,
         )
 
-    def create_thresholds(self) -> List[float]:
+    def create_thresholds(self) -> list[float]:
         if self.tracking_method is TrackingMethod.EMHT:
             if self.warp:
                 return [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
@@ -182,7 +193,7 @@ class ExperimentConfig:
         return [1e-4, 5e-4, 1e-3, 2.5e-3, 5e-3, 7.5e-3]
 
 
-def main(name: str, cfg_data: dict) -> None:
+def main(name: str, cfg_data: dict) -> None:  # noqa: C901, PLR0915
     print("Running:", name)
     print(yaml.dump(cfg_data))
     cfg = dacite.from_dict(ExperimentConfig, cfg_data, dacite.Config(cast=[pathlib.Path, tuple, enum.Enum]))
@@ -241,9 +252,10 @@ def main(name: str, cfg_data: dict) -> None:
                 if isinstance(linker, (SimpleKalmanTracker, TwoUpdateKOFTracker, SingleUpdateKOFTracker)):
                     tracks = linker.get_tracks_at_true_detections()
 
-                tracks = warp.unwarp_tracks_from_id(tracks, true_detections, detections_sequence)  # type: ignore
+                tracks = warp.unwarp_tracks_from_id(tracks, true_detections, detections_sequence)  # type: ignore[arg-type]
             tracks = refiner.run(video, tracks)  # Close gap (for u-track, EMHT and warped SKT)
-        except Exception as exc:  # pylint: disable=broad-exception-caught
+        except BaseException as exc:  # noqa: BLE001
+            kill_java_in_our_pgrp_pkill()  # Kill Java just in case it survives (ugly, needs to be fixed in ByoTrack)
             tqdm.tqdm.write(str(exc))
             tracks = []  # Tracking failed (For instance: timeout in EMHT)
 
@@ -274,7 +286,6 @@ def main(name: str, cfg_data: dict) -> None:
     print(f"Best threshold: {best_thresh}")
     print(yaml.dump(metrics[best_thresh]))
 
-    with open("best_metrics.yml", "w", encoding="utf-8") as file:
-        file.write(yaml.dump(metrics[best_thresh]))
+    pathlib.Path("best_metrics.yml").write_text(yaml.dump(metrics[best_thresh]))
 
     byotrack.Track.save(best_tracks, "tracks.pt")

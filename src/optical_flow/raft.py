@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import argparse
 import os
+import pathlib
 import sys
+from typing import TYPE_CHECKING
 
-import numpy as np
 import torch
+
+if TYPE_CHECKING:
+    import numpy as np
 
 CWD = os.environ.get("EXPYRUN_CWD", ".")
 
 sys.path.append(f"{CWD}/RAFT/core/")
-from raft import RAFT  # type: ignore
 
 
 class Raft:
@@ -18,11 +23,13 @@ class Raft:
     """
 
     def __init__(self, n_iters=32) -> None:
+        from raft import RAFT  # type:ignore[import-not-found]  # noqa: PLC0415
+
         self.n_iters = n_iters
 
-        assert os.path.exists(
-            f"{CWD}/RAFT/models/raft-small.pth"
-        ), "To use RAFT optical flow you must first download models"
+        assert pathlib.Path(f"{CWD}/RAFT/models/raft-small.pth").exists(), (  # noqa: S101
+            "To use RAFT optical flow you must first download models"
+        )
         parser = argparse.ArgumentParser()
         parser.add_argument("--model", help="restore checkpoint")
         parser.add_argument("--small", action="store_true", help="use small model")

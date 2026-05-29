@@ -7,6 +7,63 @@ Code for the [paper](https://ieeexplore.ieee.org/abstract/document/10635656): "P
 Abstract:
 *Single-particle-tracking is a fundamental pre-requisite for studying biological processes in time-lapse microscopy. However, it remains a challenging task in many applications where numerous particles are driven by fast and complex motion. To anticipate the  motion of particles most tracking algorithms usually assume near-constant position, velocity or acceleration of particles over consecutive frames. However, such assumptions are not robust to the large and sudden changes in velocity that typically occur in in vivo imaging. In this paper, we exploit optical flow to directly measure the velocity of particles in a Kalman filtering context. The resulting method shows improved robustness and correctly predicts particles positions, even with sudden motions. We validate our method on simulated data, in particular with high particle density and fast, elastic motions. We show that it divides tracking errors by two, when compared to other tracking algorithms, while preserving fast execution time.*
 
+## Try KOFT on your data
+
+KOFT is now implemented inside [ByoTrack](https://github.com/raphaelreme/byotrack) package. You can simply install byotrack with:
+
+```bash
+$ pip install byotrack torch-kf
+```
+
+Then you can run the KOFTLinker on your video & detections:
+
+```python
+import cv2
+import numpy as np
+
+import byotrack
+import byotrack.visualize
+from byotrack.implementation.linker.frame_by_frame.koft import KOFTLinker, KOFTLinkerParameters
+from byotrack.implementation.optical_flow.opencv import OpenCVOpticalFlow
+
+# Load your video:
+video = byotrack.Video("path/to/my/video")
+
+# Load your detections:
+detections_sequence = ...
+
+# Define the optical flow to use on your data
+optflow = OpenCVOpticalFlow(cv2.FarnebackOpticalFlow_create(winSize=20), downscale=4)
+
+# Check that the optical flow is set correctly (if it does not work properly, it may hurt tracking performances)
+byotrack.visualize.InteractiveFlowVisualizer(video, optflow).run()
+
+# Create the linker
+specs = KOFTLinkerParameters(
+    association_threshold=1e-3,  # Most important parameter: don't link if the association likelihood is smaller than 1e-3.
+                                 # Higher values will increase fragmentation of the trajectories. Lower values will reduce
+                                 # fragmentation but may increase identity switch.
+                                 # Typical values are in [1e-5, 1e-2]
+    detection_std=1.0,  # Detections precision in pixels (Usually ~ size of spots / 3)
+    process_std=2.0,  # Motion prediction precision (Usually ~ unexpected displacement / 3)
+    flow_std=1.0,  # Optical flow precision (Usually ~ max flow errors / 3)
+    kalman_order=1,  # Order of the kalman filter (0: Brownian, 1: Directed, 2: Accelerated, ...)
+    n_gap=5,  # Allow to link after 5 consecutive missed detections
+)
+
+linker = KOFTLinker(specs, optflow)
+
+# Run the tracking
+tracks = linker.run(video, detections_sequence)
+
+# Visualize the tracks
+byotrack.visualize.InteractiveVisualizer(video, detections_sequence, tracks).run()
+
+# Export to Icy xml format:
+import byotrack.icy
+byotrack.icy.save_tracks(tracks, "tracks_koft.xml")
+```
+
 ## Data
 
 ![simulation](images/simulation.gif)
@@ -23,7 +80,9 @@ We also use annnotated tracking data from the same paper. The video and ground t
 $ bash scripts/download_hydra_data.sh
 ```
 
-## Install
+## Reproduce the paper
+
+### Complete installation
 
 First clone the repository and submodules
 
@@ -34,10 +93,16 @@ $ git submodule init
 $ git submodule update
 ```
 
-Install requirements
+We recommend using **uv** to benefit from the uv.lock and reproduce the exact python environment that we used.
+In that case, [install uv](https://docs.astral.sh/uv/getting-started/installation/) and you can simply run the following command to duplicate our environment:
 
 ```bash
-$ pip install -r requirements.txt
+$ uv sync  # Will store the environment in ./.venv/ folder
+```
+
+Note that you can also use pip to directly install the project and its dependencies with:
+```bash
+$ pip install -e .  # Not recommended for result reproduction.
 ```
 
 Additional requirements (Icy, Fiji) are needed to reproduce some results. See the installation guidelines of [ByoTrack](https://github.com/raphaelreme/byotrack) for a complete installation.
@@ -47,97 +112,71 @@ The experiment configuration files are using environment variables that needs to
 - $DATA_FOLDER: Output folder of the simulation experiments
 - $ICY: path to icy.jar
 - $FIJI: path to fiji executable
-- $RUN_KOFT_ENV: Prefix command to run inside the python env (if any). In our case, we used a conda env and set this to `conda run -n koft --live-stream`. We acknowledge that this is probably not robust to other type of python envs. It can be unset and you can modify the scripts to correctly use the python environement of your choice.
-
-## Reproduce (ISBI 2024)
-
-We provide scripts to generate the same dataset that we used and run the same experiments
-
-```bash
-$ # Generate dataset for 5 differents seeds
-$ bash scripts/isbi/generate_dataset.sh 111
-$ bash scripts/isbi/generate_dataset.sh 222
-$ bash scripts/isbi/generate_dataset.sh 333
-$ bash scripts/isbi/generate_dataset.sh 444
-$ bash scripts/isbi/generate_dataset.sh 555
-```
-
-Reproducing the results for a particular method (skt, koft--, koft, emht, trackmate, trackmate-kf):
-
-```bash
-$ bash scripts/isbi/eval.sh $method  # With method in skt, koft, etc..
-```
-
-Aggregating all the results (mean +- std) on the different seeds:
-
-```bash
-$ python scripts/isbi/aggregate_results.py
-```
-
-## Results (ISBI 2024)
-
-![results](images/results.png)
-
-Note: *u-track* in the paper corresponds to the results of *trackmate-kf* in the code.
+- $RUN_KOFT_ENV: Prefix command to run inside the python env (if any). With **uv**, please set this to `uv run`.
 
 
-## Reproduce (Extended journal version)
+### Dataset
 
 We provide scripts to generate the same dataset that we used and run the same experiments
 
 ```bash
-$ # Generate dataset for 5 differents seeds
-$ bash scripts/jrnl/generate_dataset.sh 111
-$ bash scripts/jrnl/generate_dataset.sh 222
-$ bash scripts/jrnl/generate_dataset.sh 333
-$ bash scripts/jrnl/generate_dataset.sh 444
-$ bash scripts/jrnl/generate_dataset.sh 555
+$ # First download the hydra data (if not already done)
+$ bash scripts/download_hydra_data.sh
+$
+$ # Generate datasets for 5 differents seeds
+$ bash scripts/generate_dataset.sh 111
+$ bash scripts/generate_dataset.sh 222
+$ bash scripts/generate_dataset.sh 333
+$ bash scripts/generate_dataset.sh 444
+$ bash scripts/generate_dataset.sh 555
 ```
+
+These datasets will be stored in `./dataset/`
 
 ### Optical flow
-We benchmarked optical flow algorithms with:
+You can reproduce our optical flow benchmark with:
 ```bash
-$ bash scripts/jrnl/flow.sh 111
-$ bash scripts/jrnl/flow.sh 222
-$ bash scripts/jrnl/flow.sh 333
-$ bash scripts/jrnl/flow.sh 444
-$ bash scripts/jrnl/flow.sh 555
+$ bash scripts/flow.sh 111
+$ bash scripts/flow.sh 222
+$ bash scripts/flow.sh 333
+$ bash scripts/flow.sh 444
+$ bash scripts/flow.sh 555
 ```
 
-Aggregating tge results (mean +- std (N)) on the different seeds:
+Aggregating the results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/jrnl/aggregate_flow_results.py
+$ python scripts/aggregate_flow_results.py
 ```
 
 ### Tracking (SINETRA)
 To reproduce our tracking results on SINETRA, run:
 ```bash
-$ bash scripts/jrnl/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+$ bash scripts/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
 ```
 
 Aggregating the results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/jrnl/aggregate_results_simulation.py
+$ python scripts/aggregate_results_simulation.py
 ```
 
 ### Tracking (Dupre's Hydra)
 To reproduce our tracking results on Hydra vulgaris, run:
 ```bash
-$ bash scripts/jrnl/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+$ bash scripts/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
 ```
 
 Aggregating the results (mean +- std (N)) on the different seeds:
 
 ```bash
-$ python scripts/jrnl/aggregate_results_dupre.py
+$ python scripts/aggregate_results_dupre.py
 ```
 
 ### Noise robustness (SINETRA)
 To reproduce our noise robustness analysis on SINETRA, run:
 ```bash
-$ bash scripts/jrnl/track_snr.sh $seed  # (111, 222, 333, 444, 555)
+$ bash scripts/track_snr.sh $seed  # (111, 222, 333, 444, 555)
 ```
 
 ## Cite us

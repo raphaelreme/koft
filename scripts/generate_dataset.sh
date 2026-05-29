@@ -45,3 +45,7 @@ $RUN_KOFT_ENV expyrun config/dataset/hydra_flow.yml --simulator.imaging_config.a
 $RUN_KOFT_ENV expyrun config/dataset/hydra_flow.yml --simulator.imaging_config.alpha 0.85 --simulator.imaging_config.delta 5 --seed $@
 $RUN_KOFT_ENV expyrun config/dataset/hydra_flow.yml --simulator.imaging_config.alpha 0.85 --simulator.imaging_config.delta 50 --seed $@
 $RUN_KOFT_ENV expyrun config/dataset/hydra_flow.yml --simulator.imaging_config.alpha 0.85 --simulator.imaging_config.delta 500 --seed $@
+
+
+# Generate a long video to test up to 5000 frames
+# $RUN_KOFT_ENV expyrun config/dataset/springs_2d.yml --n_frames 5000 --seed $@

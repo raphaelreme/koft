@@ -1,9 +1,10 @@
 """For loading Tracklet Stitching data from Reme 'Tracking Intermittent Particles with Self-Learned Visual Features'"""
 
+from __future__ import annotations
+
 import dataclasses
 import json
-import pathlib
-from typing import List, Tuple
+import pathlib  # noqa: TC003
 
 import byotrack
 import byotrack.icy
@@ -23,10 +24,10 @@ class StitchingDataConfig:
         )
         return video
 
-    def load_tracklets(self) -> List[byotrack.Track]:
+    def load_tracklets(self) -> list[byotrack.Track]:
         if self.tracklets.suffix == ".xml":  # From icy
             return list(byotrack.icy.io.load_tracks(self.tracklets))
         raise ValueError("In this config we only support the tracks provided by Lagache (done with icy software)")
 
-    def load_links(self) -> List[Tuple[int, int]]:
+    def load_links(self) -> list[tuple[int, int]]:
         return [(int(key), value) for key, value in json.loads(self.links.read_text(encoding="utf-8")).items()]

@@ -1,15 +1,13 @@
-from typing import Tuple
-
-import numba  # type: ignore
+import numba  # type: ignore[import-untyped]
 import numpy as np
 
 
 @numba.njit()
-def _fast_build_links(indices: np.ndarray, shape: Tuple[int, int]):
+def _fast_build_links(indices: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
     """Extract the links from the sorted indices"""
     n = min(shape)
-    i_valid = np.full((shape[0],), True)
-    j_valid = np.full((shape[1],), True)
+    i_valid = np.full((shape[0],), fill_value=True)
+    j_valid = np.full((shape[1],), fill_value=True)
 
     links = []
 
@@ -25,7 +23,7 @@ def _fast_build_links(indices: np.ndarray, shape: Tuple[int, int]):
     return np.array(links)
 
 
-def greedy_assignment_solver(dist: np.ndarray, eta: float = np.inf):
+def greedy_assignment_solver(dist: np.ndarray, eta: float = np.inf) -> np.ndarray:
     """Solve assignement problem in a greedy way
 
     Iteratively select the minimum cost, then deleting its row/column.
