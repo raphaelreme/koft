@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+import byotrack.api.optical_flow.optical_flow
+from byotrack.implementation.optical_flow.opencv import OpenCVOpticalFlow
+
 from .optical_flow import OptFlow, show_flow_on_video  # noqa: F401
 
 # Create some default optical flows
@@ -17,3 +20,9 @@ no_optical_flow = OptFlow(lambda x, _: np.zeros((*x.shape, 2)), scale=4)
 
 # Vxm can be created from vxm submodule (Required a trained model)
 # vxm = OptFlow(Vxm())
+
+
+# ByoTrack compatible optical flows:
+bt_tvl1 = OpenCVOpticalFlow(_cv2_tvl1, downscale=4)
+bt_farneback = OpenCVOpticalFlow(_cv2_farneback, downscale=4)
+bt_no_flow = byotrack.api.optical_flow.optical_flow.DummyOpticalFlow(4)

@@ -1,3 +1,5 @@
+# We have now switched to the implementation in ByoTrack/torch-kf.
+
 import dataclasses
 
 import torch
@@ -10,8 +12,6 @@ import torch.linalg
 # We could try to implement a numba fast version with a threshold to compare only with few close measurements.
 # But the simple approach of computing once the inverse covariance, and then only performing matmul works pretty well
 # (And can be sent to GPU)
-
-# XXX: Switch to torch-kf
 
 
 @dataclasses.dataclass

@@ -1,13 +1,15 @@
-import filterpy  # type: ignore
-import filterpy.common  # type: ignore
-import filterpy.kalman  # type: ignore
+# We have now switched to the implementation in ByoTrack.
+
+import filterpy  # type: ignore[import-untyped]
+import filterpy.common  # type: ignore[import-untyped]
+import filterpy.kalman  # type: ignore[import-untyped]
 import numpy as np
 import tqdm
 
 # Old implem of KF with filterpy. Useful for RTS smoothing not yet implemented in our fast torch kf
 
 
-def create_cvkf(R, Q):
+def create_cvkf(R, Q):  # noqa: N803
     """Constant velocity motion model with R the measurement noise in pixels and Q the process noise
 
     R is the std on spatial measurement (99.7% of measurement should fall within 3R of the true position)
@@ -60,7 +62,7 @@ def create_cvkf(R, Q):
     return kf
 
 
-def rts_smoothing(measured_positions: np.ndarray, kf_builder):
+def rts_smoothing(measured_positions: np.ndarray, kf_builder) -> np.ndarray:
     """Smooth a track matrix using RTS + CVKF
 
     Args:
@@ -73,7 +75,7 @@ def rts_smoothing(measured_positions: np.ndarray, kf_builder):
     for i, z in enumerate(tqdm.tqdm(measured_positions)):
         kf = kf_builder()
         mu, cov, _, _ = kf.batch_filter(z, update_first=True)
-        M, _, _, _ = kf.rts_smoother(mu, cov)
+        M, _, _, _ = kf.rts_smoother(mu, cov)  # noqa: N806
         estimated_state[i] = M[:, :4, 0]
 
     return estimated_state

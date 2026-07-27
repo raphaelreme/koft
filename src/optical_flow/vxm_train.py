@@ -1,28 +1,34 @@
 """Training script for vxm with a fixed scale and blur"""
 
+from __future__ import annotations
+
 import copy
 import os
 import random
 import sys
-from typing import Sequence
+from typing import TYPE_CHECKING
 
+import byotrack
 import cv2
 import deep_trainer
 import deep_trainer.pytorch.metric
-import numpy as np
 import torch
 import torch.utils.data
-import torchvision.transforms.v2 as transforms  # type: ignore
+import torchvission.transforms.v2 as transforms  # type: ignore[import-not-found]
 import tqdm
 
-import byotrack
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy as np
+
 
 sys.path.append(f"{os.environ.get('EXPYRUN_CWD', '.')}/voxelmorph/")
 os.environ["NEURITE_BACKEND"] = "pytorch"
 os.environ["VXM_BACKEND"] = "pytorch"
 
-import voxelmorph as vxm
 
+import voxelmorph as vxm
 
 SCALE = 4
 BLUR = 1
@@ -31,8 +37,8 @@ BLUR = 1
 class Loss:
     def __init__(self, weight=0.01):
         self.weight = weight
-        self.image_loss = vxm.losses.MSE()
-        self.penal_loss = vxm.losses.Grad()
+        self.image_loss = vxm.losses.MSE()  # type: ignore[attr-defined]
+        self.penal_loss = vxm.losses.Grad()  # type: ignore[attr-defined]
         self.last_image_loss = torch.tensor(float("nan"))
         self.last_penal_loss = torch.tensor(float("nan"))
 
@@ -79,10 +85,10 @@ class Trainer(deep_trainer.PytorchTrainer):
 
         metrics = self.metrics_handler.last_values
         validation_metric = self.metrics_handler.get_validation_metric()
-        if isinstance(validation_metric, deep_trainer.pytorch.metric.PytorchMetric):
+        if isinstance(validation_metric, deep_trainer.pytorch.metric.PytorchMetric):  # noqa: SIM102
             if isinstance(validation_metric.loss_function, Loss):
-                metrics["ImageLoss"] = validation_metric.loss_function.last_image_loss.item()  # type: ignore
-                metrics["PenalLoss"] = validation_metric.loss_function.last_penal_loss.item()  # type: ignore
+                metrics["ImageLoss"] = validation_metric.loss_function.last_image_loss.item()
+                metrics["PenalLoss"] = validation_metric.loss_function.last_penal_loss.item()
 
         return metrics
 
@@ -105,10 +111,10 @@ class MultiVideoDataset(torch.utils.data.Dataset):
             self.lengths.append(len(video))
             processed_frames = torch.zeros((len(video), channels, width // SCALE, height // SCALE))
             for i, frame in enumerate(video):
-                frame = cv2.GaussianBlur(frame, (0, 0), BLUR, BLUR)
-                frame = cv2.resize(frame, (0, 0), fx=1 / SCALE, fy=1 / SCALE, interpolation=cv2.INTER_LINEAR)
+                frame = cv2.GaussianBlur(frame, (0, 0), BLUR, BLUR)  # type: ignore[call-overload]  # noqa: PLW2901
+                frame = cv2.resize(frame, (0, 0), fx=1 / SCALE, fy=1 / SCALE, interpolation=cv2.INTER_LINEAR)  # noqa: PLW2901
                 if len(frame.shape) == 2:
-                    frame = frame[..., None]
+                    frame = frame[..., None]  # noqa: PLW2901
 
                 processed_frames[i] = torch.tensor(frame).permute(2, 0, 1)
 
@@ -123,8 +129,8 @@ class MultiVideoDataset(torch.utils.data.Dataset):
         i = 0
         length = self.lengths[0]
 
-        for i, length in enumerate(self.lengths):
-            length -= not self.train
+        for i, length in enumerate(self.lengths):  # noqa: B007
+            length -= not self.train  # noqa: PLW2901
             if index >= length:
                 index -= length
             else:
@@ -135,7 +141,7 @@ class MultiVideoDataset(torch.utils.data.Dataset):
         if self.train:
             mini = max(0, index - self.MAX_TRAIN_OFFSET)
             maxi = min(length - 1, index + self.MAX_TRAIN_OFFSET)
-            index = random.randint(mini, maxi)
+            index = random.randint(mini, maxi)  # noqa: S311
             target = self.sequences[i][index]
             if self.train_transforms is not None:
                 images = torch.cat([source, target], dim=1)  # concat on channel axis
@@ -200,7 +206,7 @@ def train():
     )
 
     channels, *in_shape = trainset[0][0].shape
-    model = vxm.networks.VxmDense(in_shape, src_feats=channels, trg_feats=channels, int_steps=0)
+    model = vxm.networks.VxmDense(in_shape, src_feats=channels, trg_feats=channels, int_steps=0)  # type: ignore[attr-defined]
     model.flow.bias = None  # Disable bias
 
     optimizer = torch.optim.Adam(

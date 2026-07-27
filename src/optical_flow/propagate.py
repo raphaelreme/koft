@@ -1,11 +1,16 @@
-from typing import Union, Sequence
+from __future__ import annotations
 
-import numpy as np
+from typing import TYPE_CHECKING
+
 import torch
 import tqdm
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
-from .. import optical_flow
+    import numpy as np
+
+    from src import optical_flow
 
 
 class DirectedFlowPropagation:
@@ -17,9 +22,9 @@ class DirectedFlowPropagation:
     def __call__(
         self,
         tracks_matrix: torch.Tensor,
-        video: Union[Sequence[np.ndarray], np.ndarray],
+        video: Sequence[np.ndarray] | np.ndarray,
         forward=True,
-        **kwargs,
+        **kwargs,  # noqa: ANN003, ARG002
     ) -> torch.Tensor:
         """Propagate tracks matrix using an optical flow in a single direction
 
@@ -35,7 +40,7 @@ class DirectedFlowPropagation:
                 Shape: (T, N, D), dtype: float32
         """
         tracks_matrix = tracks_matrix if forward else torch.flip(tracks_matrix, (0,))
-        frame_id = lambda i: i if forward else len(tracks_matrix) - i - 1
+        frame_id = lambda i: i if forward else len(tracks_matrix) - i - 1  # noqa: E731
 
         propagation_matrix = tracks_matrix.clone()  # (T, N, D)
         valid = ~torch.isnan(propagation_matrix).any(dim=-1)  # (T, N)

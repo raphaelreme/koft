@@ -1,19 +1,21 @@
-from typing import List
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import byotrack
 import numpy as np
 import torch
 import tqdm.auto as tqdm
 
-import byotrack
-
-from .optical_flow import OptFlow
+if TYPE_CHECKING:
+    from .optical_flow import OptFlow
 
 # XXX Pretty ugly code here
 
 
 def warp_detections(
-    video, optflow: OptFlow, detections_sequence: List[byotrack.Detections]
-) -> List[byotrack.Detections]:
+    video, optflow: OptFlow, detections_sequence: list[byotrack.Detections]
+) -> list[byotrack.PointDetections]:
     """Warp Detections onto the last frame using optical flow
 
     # quadratic complexity
@@ -22,8 +24,8 @@ def warp_detections(
     Will only warp the positions and drop the rest
     """
     src = optflow.prepare(video[0])
-    positions: List[np.ndarray] = []
-    shape = torch.tensor(detections_sequence[0].shape)
+    positions: list[np.ndarray] = []
+    shape = detections_sequence[0].shape
     for i, frame in enumerate(tqdm.tqdm(video[1:])):
         dst = optflow.prepare(frame)
         flow = optflow.calc(src, dst)
@@ -35,31 +37,21 @@ def warp_detections(
 
     positions.append(detections_sequence[-1].position.clone().numpy())
 
-    detections_extra_data = [
-        {
-            key: value
-            for key, value in detections_sequence[i].data.items()
-            if key not in ["shape", "position", "bbox", "segmentation"]
-        }
-        for i in range(len(detections_sequence))
-    ]
-
+    # Has to round positions for a compatible SKT/u-track/eMHT unwarping
     return [
-        byotrack.Detections(
-            {  # Has to round positions for a compatible SKT/u-track/eMHT unwarping
-                "position": torch.tensor(position.clip(0.0, shape.numpy() - 1).round(), dtype=torch.float32),
-                "shape": shape,
-                **detections_extra_data[i],
-            },
-            frame_id=i,
+        byotrack.PointDetections(
+            torch.tensor(position.clip(0.0, np.array(shape) - 1).round(), dtype=torch.float32),
+            shape=shape,
+            confidence=detections_sequence[i].confidence,
+            labels=detections_sequence[i].confidence,
         )
         for i, position in enumerate(positions)
     ]
 
 
 def warp_detections_linear(
-    video, optflow: OptFlow, detections_sequence: List[byotrack.Detections]
-) -> List[byotrack.Detections]:
+    video, optflow: OptFlow, detections_sequence: list[byotrack.Detections]
+) -> list[byotrack.PointDetections]:
     """Warp Detections onto the last frame using optical flow (Linear complexity)
 
     Warnings: Assume that the detections are sorted and that there is one Detections by video frame
@@ -68,7 +60,7 @@ def warp_detections_linear(
     video = video[::-1]
     dst = optflow.prepare(video[0])
     cum_flow = np.zeros((*dst.shape, 2))
-    shape = torch.tensor(detections_sequence[0].shape)
+    shape = detections_sequence[0].shape
     points = np.indices(dst.shape, dtype=np.float64).transpose(1, 2, 0)
 
     warped_positions = [detections_sequence[-1].position.round()]
@@ -84,31 +76,22 @@ def warp_detections_linear(
 
         position = optflow.transform(cum_flow, detections_sequence[len(video) - i - 2].position.clone().numpy())
 
-        warped_positions.append(torch.tensor(position.clip(0.0, shape.numpy() - 1).round(), dtype=torch.float32))
+        warped_positions.append(torch.tensor(position.clip(0.0, np.array(shape) - 1).round(), dtype=torch.float32))
         dst = src
 
-    detections_extra_data = [
-        {
-            key: value
-            for key, value in detections_sequence[i].data.items()
-            if key not in ["shape", "position", "bbox", "segmentation"]
-        }
-        for i in range(len(detections_sequence))
-    ]
+    # Has to round positions for a compatible SKT/u-track/eMHT unwarping
     return [
-        byotrack.Detections(
-            {  # Has to round positions for a compatible SKT/u-track/eMHT unwarping
-                "position": position,
-                "shape": shape,
-                **detections_extra_data[i],
-            },
-            frame_id=i,
+        byotrack.PointDetections(
+            position,
+            shape=shape,
+            confidence=detections_sequence[i].confidence,
+            labels=detections_sequence[i].confidence,
         )
         for i, position in enumerate(reversed(warped_positions))
     ]
 
 
-def unwarp_tracks(video, optflow: OptFlow, tracks: List[byotrack.Track]) -> List[byotrack.Track]:
+def unwarp_tracks(video, optflow: OptFlow, tracks: list[byotrack.Track]) -> list[byotrack.Track]:
     """Unwarp tracks to evaluate (If detections were previously warped)
 
     Very expensive. If you know directly the detections id it is much better to just inverse detections
@@ -121,23 +104,23 @@ def unwarp_tracks(video, optflow: OptFlow, tracks: List[byotrack.Track]) -> List
         dst = optflow.prepare(video[i])
         flow = optflow.calc(src, dst)
 
-        for t in range(0, i + 1):
+        for t in range(i + 1):
             mu[t] = optflow.transform(flow, mu[t])
 
         src = dst
 
     unwarped_tracks = []
     for i in range(mu.shape[1]):
-        unwarped_tracks.append(byotrack.Track(0, torch.tensor(mu[:, i]), i))
+        unwarped_tracks.append(byotrack.Track(0, torch.tensor(mu[:, i]), i))  # noqa: PERF401
 
     return unwarped_tracks
 
 
 def unwarp_tracks_from_id(
-    tracks: List[byotrack.Track],
-    true_detections: List[byotrack.Detections],
-    warped_detections: List[byotrack.Detections],
-) -> List[byotrack.Track]:
+    tracks: list[byotrack.Track],
+    true_detections: list[byotrack.Detections],
+    warped_detections: list[byotrack.Detections],
+) -> list[byotrack.Track]:
     """Unwarp tracks cleverly using the position of tracks to retrieve the detection id"""
     tracks_tensor = byotrack.Track.tensorize(tracks)
     real_tracks_tensor = torch.full_like(tracks_tensor, torch.nan)
@@ -154,7 +137,7 @@ def unwarp_tracks_from_id(
     real_tracks = []
 
     for i in range(real_tracks_tensor.shape[1]):
-        real_tracks.append(
+        real_tracks.append(  # noqa: PERF401
             byotrack.Track(
                 tracks[i].start, real_tracks_tensor[tracks[i].start : tracks[i].start + len(tracks[i]), i], i
             )

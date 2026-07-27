@@ -22,7 +22,7 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
         self.n_particles = mu.shape[1]
         self.generate_outside_particles = generate_outside_particles
 
-    def run(self, video: Sequence[np.ndarray] | np.ndarray) -> list[byotrack.Detections]:
+    def run(self, video: Sequence[np.ndarray] | np.ndarray) -> list[byotrack.PointDetections]:
         detections_sequence = []
 
         for k, frame in enumerate(tqdm.tqdm(video)):
@@ -54,16 +54,6 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
             idx = torch.cat((idx, -torch.ones_like(false_alarm)[:, 0]))
 
             # bbox = torch.cat((positions - 1, torch.zeros_like(positions) + 3), dim=-1)
-            detections_sequence.append(
-                byotrack.Detections(
-                    {
-                        "position": positions,
-                        # "bbox": bbox.round().to(torch.int32),
-                        "shape": shape,
-                        "idx": idx,
-                    },
-                    frame_id=k,
-                )
-            )
+            detections_sequence.append(byotrack.PointDetections(positions, radius=2.0, shape=frame.shape, labels=idx))
 
         return detections_sequence
