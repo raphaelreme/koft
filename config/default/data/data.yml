@@ -8,3 +8,5 @@ data:
     speed_thresh: 1.0
   sinetra:
     simulation_path: $EXPYRUN_CWD/dataset/{simulation_name}/{alpha}-{delta}/{seed}
+  trasein:
+    video: $EXPYRUN_CWD/dataset/trasein/tdt_contrxn-1.avi

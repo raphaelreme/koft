@@ -15,6 +15,6 @@ wget https://github.com/raphaelreme/SINETRA/releases/download/dupre_data/dupre_2
 mv dupre_20140829_1_contracting.tiff dataset/dupre
 
 
-# TRASE-IN first video
+# Trase-In first video
 wget https://github.com/raphaelreme/koft/releases/download/hanson_data/tdt_contrxn-1.avi
-mv tdt_contrxn-1.avi dataset/trase-in
+mv tdt_contrxn-1.avi dataset/trasein

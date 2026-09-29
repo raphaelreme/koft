@@ -1,0 +1,13 @@
+__default__:
+  - ./sinetra.yml
+
+__run__:
+  __name__: trasein
+
+data:
+  data_type: trasein
+
+tracking_methods:
+  - koft
+  - emht
+  - trackastra-lap

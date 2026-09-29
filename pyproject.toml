@@ -14,7 +14,7 @@ license-files = ["LICENSE"]
 
 requires-python = ">=3.10"
 dependencies = [
-    "byotrack",
+    "byotrack[full]",
     "dacite",
     "deep-trainer",
     "expyrun",
