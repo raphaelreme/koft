@@ -17,7 +17,7 @@ import yaml
 from byotrack.implementation.refiner.stitching import emc2
 
 from src import optical_flow
-from src.data import dupre, simulation, stitching  # noqa: TC001
+from src.data import dupre, sinetra, stitching  # noqa: TC001
 from src.metrics import stitching as stitching_metrics
 from src.optical_flow import propagate, raft, vxm
 from src.utils import enforce_all_seeds
@@ -140,7 +140,7 @@ def main(name: str, cfg_data: dict) -> None:
 
     if cfg.run_dupre:
         # Dupre
-        video = cfg.dupre_data.open()
+        video = cfg.dupre_data.open_video()
         tracks = cfg.dupre_data.cleaned_tracks()
         f2f_dist["dupre"] = frame2frame_dist(video, tracks, optflow)
         metrics["dupre"] = {
@@ -151,8 +151,8 @@ def main(name: str, cfg_data: dict) -> None:
 
     if cfg.run_simulation:
         # Simu - OF
-        video = simulation.open_video(cfg.of_simulation)
-        tracks = simulation.load_tracks(cfg.of_simulation)
+        video = sinetra.SinetraDataConfig(cfg.of_simulation).open_video()
+        tracks = sinetra.SinetraDataConfig(cfg.of_simulation).load_tracks()
         f2f_dist["of"] = frame2frame_dist(video, tracks, optflow)
         metrics["of"] = {
             "RMSE": f2f_dist["of"].pow(2).mean().sqrt().item(),
@@ -161,8 +161,8 @@ def main(name: str, cfg_data: dict) -> None:
         print(f"OF: RMSE:{metrics['of']['RMSE']:.4f}, hard-links:{metrics['of']['n-hard']:.2f}")
 
         # Simu - springs
-        video = simulation.open_video(cfg.springs_simulation)
-        tracks = simulation.load_tracks(cfg.springs_simulation)
+        video = sinetra.SinetraDataConfig(cfg.springs_simulation).open_video()
+        tracks = sinetra.SinetraDataConfig(cfg.springs_simulation).load_tracks()
         f2f_dist["springs"] = frame2frame_dist(video, tracks, optflow)
         metrics["springs"] = {
             "RMSE": f2f_dist["springs"].pow(2).mean().sqrt().item(),

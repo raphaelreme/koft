@@ -1,0 +1,13 @@
+koft:
+  association_threshold: -1.0
+  detection_std: -1.0
+  flow_std: -1.0
+  process_std: -1.0
+  kalman_order: 1
+  n_gap: 7
+  n_valid: 3
+  cost: likelihood
+  association_method: sparse_opt_smooth
+  always_measure_velocity: True
+  track_building: detection
+  initial_std_factor: 5.0

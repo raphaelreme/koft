@@ -1,0 +1,10 @@
+data:
+  data_type: sinetra
+  dupre:
+    video: $EXPYRUN_CWD/dataset/dupre/20160412_stk_0001.tif
+    tracks: $EXPYRUN_CWD/dataset/dupre/20160412_dupreannotation_stk0001.csv
+    measurement_noise: 2.5
+    process_noise: 0.5
+    speed_thresh: 1.0
+  sinetra:
+    simulation_path: $EXPYRUN_CWD/dataset/{simulation_name}/{alpha}-{delta}/{seed}

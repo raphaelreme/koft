@@ -51,7 +51,7 @@ class FakeDetector(byotrack.Detector):  # TODO: include weight
                 false_alarm = false_alarm[mask[false_alarm.long()[:, 0], false_alarm.long()[:, 1]]]
 
             positions = torch.cat((positions, false_alarm))
-            idx = torch.cat((idx, -torch.ones_like(false_alarm)[:, 0]))
+            idx = torch.cat((idx, -torch.ones_like(false_alarm)[:, 0])) + 1
 
             # bbox = torch.cat((positions - 1, torch.zeros_like(positions) + 3), dim=-1)
             detections_sequence.append(byotrack.PointDetections(positions, radius=2.0, shape=frame.shape, labels=idx))

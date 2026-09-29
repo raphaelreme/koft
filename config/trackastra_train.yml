@@ -1,0 +1,27 @@
+batch_size: 32
+lr: 4e-4
+crop_size:
+- 128
+- 128
+detection_folders:
+- ERR_SEG  # Much better to use the ERR_SEG folder to train rather than GT (as it will run on ERR_SEG on real life)
+dropout: 0.01
+example_images: False  # Slow
+input_train:
+- ../../koft_tracking/dataset/trackastra/springs_2d/0.2-50.0/11
+- ../../koft_tracking/dataset/trackastra/hydra_flow/0.2-50.0/44
+input_val:
+- ../../koft_tracking/dataset/trackastra/springs_2d/0.2-50.0/22
+- ../../koft_tracking/dataset/trackastra/hydra_flow/0.2-50.0/33
+max_tokens: 2048
+name: sinetra
+ndim: 2
+num_decoder_layers: 5
+num_encoder_layers: 5
+outdir: runs
+distributed: False
+window: 4
+train_samples: 10000
+epochs: 100
+# features: none
+spatial_pos_cutoff: 30

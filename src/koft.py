@@ -85,8 +85,10 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
         self.opt_flow = opt_flow
         self.flow = np.zeros((1, 1, 2))
 
-    def run(
-        self, video: Sequence[np.ndarray] | np.ndarray, detections_sequence: Sequence[byotrack.Detections]
+    def run(  # Broken by BT v2.0
+        self,
+        video: Sequence[np.ndarray] | np.ndarray,  # type: ignore[override]
+        detections_sequence: Sequence[byotrack.Detections],  # type: ignore[override]
     ) -> list[byotrack.Track]:
         assert isinstance(video, Sequence), "Only indexable videos are supported"  # noqa: S101
 
@@ -99,7 +101,7 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
         )
 
         # Extract initial frame and prepare for optflow
-        frame = video[next(iter(detections_sequence)).frame_id][..., 0]
+        frame = video[next(iter(detections_sequence)).frame_id][..., 0]  # type: ignore[attr-defined]  # BT v2.0
         src = self.opt_flow.prepare(frame)
 
         for detections in tqdm.tqdm(detections_sequence):
@@ -109,7 +111,7 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
                 # frame = video[max(detections.frame_id - 1, 0)]
                 # src = self.opt_flow.prepare(frame)
                 # frame = video[detections.frame_id][..., 0]
-                frame = video[detections.frame_id + 1][..., 0]
+                frame = video[detections.frame_id + 1][..., 0]  # type: ignore[attr-defined]  # BT v2.0
             except IndexError:
                 pass
 
@@ -186,7 +188,7 @@ class SingleUpdateKOFTracker(SimpleKalmanTracker):
             prior.covariance[links[:, 0]] = posterior.covariance
             posterior = prior
 
-        self._handle_tracks(posterior, measures, links, detections.frame_id)
+        self._handle_tracks(posterior, measures, links, detections.frame_id)  # type: ignore[attr-defined]  # BT v2.0
 
 
 class OptFlowExtraction(enum.Enum):
@@ -288,6 +290,6 @@ class TwoUpdateKOFTracker(SingleUpdateKOFTracker):
         self.state.mean[links[:, 0]] = posterior.mean
         self.state.covariance[links[:, 0]] = posterior.covariance
 
-        self._handle_tracks(self.state, measures, links, detections.frame_id)
+        self._handle_tracks(self.state, measures, links, detections.frame_id)  # type: ignore[attr-defined]  # BT v2.0
 
         self.state = self.kalman_filter.predict(self.state)

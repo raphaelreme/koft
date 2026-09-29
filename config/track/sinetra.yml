@@ -2,21 +2,30 @@ __new_key_policy__: pass
 
 __default__:
   - ../default/experiments/common.yml
+  - ../default/data/data.yml
   - ../default/track/detection.yml
-  - ../default/track/kalman.yml
-  - ../default/data/dupre.yml
+  - ../default/track/koft.yml
 
 __run__:
   __main__: src.experiments.track:main
-  __name__: "{simulation_name}/{alpha}-{delta}/{seed}/{tracking_method}"
+  __name__: "{simulation_name}/{alpha}-{delta}/{seed}"
   __output_dir__: experiment_folder/tracking/  # Main output directoy. True output_dir is output_dir/__name__
 
-real_data: False  # False -> use simulation path / True -> use dupre's data
+# Parameters of the simulations
 simulation_name: springs_2d
 alpha: 0.2
 delta: 50.0
-simulation_path: $EXPYRUN_CWD/dataset/{simulation_name}/{alpha}-{delta}/{seed}
-tracking_method: skt  # trackmate/emht/skt/koft--/koft
+
 icy_path: $ICY
 fiji_path: $FIJI
+trackastra_model: $EXPYRUN_CWD/models/trackastra/sinetra
 warp: False
+
+tracking_methods:
+  - skt
+  - koft
+  - koft--
+  - emht
+  - trackastra
+  - trackastra-lap
+  - trackmate-kf

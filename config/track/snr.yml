@@ -1,13 +1,11 @@
-__new_key_policy__: pass
-
 __default__:
-  - ./simulator.yml
+  - ./sinetra.yml
 
 __run__:
-  __main__: src.experiments.snr_track:main
   __output_dir__: experiment_folder/tracking_snr/  # Main output directoy. True output_dir is output_dir/__name__
 
-tracking_method: koft
+tracking_methods: 
+  - koft
 
 detection:
   detector: fake  # Run Fake@80% by default

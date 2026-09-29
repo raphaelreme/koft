@@ -1,0 +1,70 @@
+# Replace matching in trackastra with this function: (Using only positional matching with match only < 2.5 pix)
+# Then use the standard train from trackastra github with the config given in config/trackastra_train.yml
+
+
+def matching(y_true, y_pred, threshold=0.5, max_distance: int = 5):
+    """Computes IoU and distance score between all pairs of regions in y_true and y_pred.
+
+    returns the true/pred matching based on the higher of the two scores for each pair of regions
+
+    Parameters
+    ----------
+    y_true: ndarray
+        ground truth label image (integer valued)
+    y_pred: ndarray
+        predicted label image (integer valued)
+    threshold: float
+        threshold for matching criterion (default 0.5)
+    max_distance: int
+        maximum distance between centroids of regions in y_true and y_pred (default 16)
+
+    Returns:
+    -------
+    gt_pred: tuple
+        tuple of all matched region label pairs in y_true and y_pred
+
+
+    """
+    threshold = 0.5
+    max_distance = 5
+    y_true, y_pred = y_true.astype(np.int32), y_pred.astype(np.int32)
+    _check_label_array(y_true, "y_true")
+    _check_label_array(y_pred, "y_pred")
+    if not y_true.shape == y_pred.shape:
+        raise ValueError(f"y_true ({y_true.shape}) and y_pred ({y_pred.shape}) have different shapes")
+    if threshold is None:
+        threshold = 0
+
+    threshold = float(threshold) if np.isscalar(threshold) else map(float, threshold)
+
+    y_true, _, map_rev_true = relabel_sequential(y_true)
+    y_pred, _, map_rev_pred = relabel_sequential(y_pred)
+
+    # overlap = label_overlap(y_true, y_pred, check=False)
+
+    # scores_iou = intersection_over_union(overlap)
+    # scores_dist = dist_score(y_true, y_pred, max_distance)
+    # scores = np.maximum(scores_iou, scores_dist)
+
+    scores = dist_score(y_true, y_pred, max_distance)
+
+    assert 0 <= np.min(scores) <= np.max(scores) <= 1
+
+    n_true, n_pred = scores.shape
+    n_matched = min(n_true, n_pred)
+
+    # not_trivial = n_matched > 0 and np.any(scores >= thr)
+    not_trivial = n_matched > 0
+    if not_trivial:
+        # compute optimal matching with scores as tie-breaker
+        costs = -(scores >= threshold).astype(float) - scores / (2 * n_matched)
+        true_ind, pred_ind = linear_sum_assignment(costs)
+        assert n_matched == len(true_ind) == len(pred_ind)
+        match_ok = scores[true_ind, pred_ind] >= threshold
+        true_ind = true_ind[match_ok]
+        pred_ind = pred_ind[match_ok]
+        matched = tuple((int(map_rev_true[i]), int(map_rev_pred[j])) for i, j in zip(1 + true_ind, 1 + pred_ind))
+    else:
+        matched = ()
+
+    return matched

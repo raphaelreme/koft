@@ -28,7 +28,7 @@ class DupreDataConfig:
     process_noise: float = 0.5
     speed_thresh: float = 1.0
 
-    def open(self) -> byotrack.Video:
+    def open_video(self) -> byotrack.Video:
         """Load and transform the video"""
         video = byotrack.Video(self.video)
         video.set_transform(

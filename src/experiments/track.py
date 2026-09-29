@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import enum
 import pathlib
@@ -8,31 +9,25 @@ from typing import TYPE_CHECKING
 import byotrack
 import dacite
 import torch
-import tqdm
+import tqdm.auto as tqdm
 import yaml
 from byotrack.implementation.detector.wavelet import WaveletDetector
+from byotrack.implementation.linker.frame_by_frame import kalman_linker, koft, trackonstra
 from byotrack.implementation.linker.icy_emht import EMHTParameters, IcyEMHTLinker, Motion
-from byotrack.implementation.linker.trackmate.trackmate import TrackMateLinker, TrackMateParameters
+from byotrack.implementation.linker.trackastra import TrackAstraLinker, TrackAstraParameters
+from byotrack.implementation.linker.trackmate import TrackMateLinker, TrackMateParameters
 from byotrack.implementation.refiner.interpolater import ForwardBackwardInterpolater
+from trackastra.model import Trackastra  # type: ignore[import-untyped]
 
-from src.data import dupre, simulation  # noqa: TC001
+from src.data import TrackingDataConfig  # noqa: TC001
 from src.detector import FakeDetector
-from src.koft import OptFlowExtraction, SingleUpdateKOFTracker, TwoUpdateKOFTracker, constant_koft_filter
 from src.metrics.detections import DetectionMetric
 from src.metrics.tracking import compute_tracking_metrics
-from src.optical_flow import farneback, warp
-from src.skt import (
-    Dist,
-    MatchingConfig,
-    Method,  # noqa: TC001
-    PartialTrack,
-    SimpleKalmanTracker,
-    constant_kalman_filter,
-)
+from src.optical_flow import bt_farneback as farneback
 from src.utils import enforce_all_seeds, kill_java_in_our_pgrp_pkill
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
+    from collections.abc import Sequence
 
 
 class DetectionMethod(enum.Enum):
@@ -49,8 +44,8 @@ class WaveletConfig:
 
 @dataclasses.dataclass
 class FakeConfig:
-    fpr: float = 0.1  # Bad detection rate
-    fnr: float = 0.2  # Miss detection rate
+    fpr: float = 0.2
+    fnr: float = 0.2
     measurement_noise: float = 1.0
 
 
@@ -67,19 +62,6 @@ class DetectionConfig:
         return FakeDetector(mu, self.fake.measurement_noise, self.fake.fpr, self.fake.fnr, False)
 
 
-@dataclasses.dataclass
-class KalmanConfig:
-    detection_noise: float
-    of_noise: float
-    process_noise: float  # Miss evaluation of the process
-    dist: Dist
-    matching_method: Method
-    always_update_velocities: bool = True
-    dim: int = 2
-    order: int = 1
-    max_missed_detections: int = 7
-
-
 class TrackingMethod(enum.Enum):
     SKT = "skt"
     KOFT = "koft"
@@ -87,129 +69,145 @@ class TrackingMethod(enum.Enum):
     TRACKMATE = "trackmate"
     TRACKMATE_KF = "trackmate-kf"
     EMHT = "emht"
+    TRACKASTRA = "trackastra"
+    TRACKASTRA_LAP = "trackastra-lap"
 
 
 @dataclasses.dataclass
 class ExperimentConfig:
     seed: int
-    real_data: bool
-    simulation_path: pathlib.Path
-    dupre_data: dupre.DupreDataConfig
-    tracking_method: TrackingMethod
+    data: TrackingDataConfig
+    tracking_methods: list[TrackingMethod]
     detection: DetectionConfig
-    kalman: KalmanConfig
+    koft: koft.KOFTLinkerParameters
     icy_path: pathlib.Path
     fiji_path: pathlib.Path
+    trackastra_model: pathlib.Path
     warp: bool = False
 
-    def create_linker(self, thresh: float) -> byotrack.Linker:
-        """Create a linker"""
-        PartialTrack.MAX_NON_MEASURE = self.kalman.max_missed_detections
+    def linkers(
+        self,
+        detections_sequence: Sequence[byotrack.Detections],
+        video: byotrack.Video,
+        gt_tracks: list[byotrack.Track],
+    ) -> list[byotrack.Linker]:
+        # Parameters estimations (KOFT/SKT/eMHT/TrackMate)
+        if self.koft.flow_std <= 0.0:
+            self.koft.estimate_flow_std_from_tracks(video[:50], farneback, gt_tracks[::10])
 
-        if self.tracking_method is TrackingMethod.EMHT:
-            return IcyEMHTLinker(
-                self.icy_path,
-                EMHTParameters(
-                    gate_factor=thresh,
-                    motion=Motion.MULTI,
-                    tree_depth=2,
-                ),
-                timeout=180,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)
+        # if self.koft.process_std <= 0.0:
+        #     self.koft.estimate_process_std_from_tracks(gt_tracks[::10])
+
+        self.koft.estimate(detections_sequence)
+
+        tqdm.tqdm.write("KOFT main parameters:")
+        tqdm.tqdm.write(
+            yaml.dump(
+                {
+                    "threshold": str(self.koft.association_threshold),
+                    "det_std": str(self.koft.detection_std),
+                    "flow_std": str(self.koft.flow_std),
+                    "process_std": str(self.koft.process_std),
+                }
             )
-
-        if self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF):
-            # As kalman tracking we let a gap of 2 consecutive miss detections
-            # In that case, we allow 1.5 thresh
-            return TrackMateLinker(
-                self.fiji_path,
-                TrackMateParameters(
-                    max_frame_gap=PartialTrack.MAX_NON_MEASURE,
-                    linking_max_distance=thresh,
-                    gap_closing_max_distance=thresh * 1.5,
-                    kalman_search_radius=thresh if self.tracking_method is TrackingMethod.TRACKMATE_KF else None,
-                ),
-            )
-
-        if self.tracking_method is TrackingMethod.SKT:
-            kalman_filter = constant_kalman_filter(
-                torch.tensor(self.kalman.detection_noise),
-                torch.tensor(self.kalman.process_noise),
-                self.kalman.dim,
-                self.kalman.order,
-            )
-
-            return SimpleKalmanTracker(
-                kalman_filter, MatchingConfig(thresh, self.kalman.dist, self.kalman.matching_method)
-            )
-
-        # self.tracking_method is TrackingMethod.KOFT:
-        kalman_filter = constant_koft_filter(
-            torch.tensor(self.kalman.detection_noise),
-            torch.tensor(self.kalman.of_noise),
-            torch.tensor(self.kalman.process_noise),
-            self.kalman.dim,
-            self.kalman.order,
         )
 
-        if self.tracking_method is TrackingMethod.KOFTmm:
-            return SingleUpdateKOFTracker(
-                kalman_filter, farneback, MatchingConfig(thresh, self.kalman.dist, self.kalman.matching_method)
-            )
-            # <=> two updates, without updating vel for all tracks and using OptFlowExtraction at Detected pos
-            # return TwoUpdateKOFTracker(
-            #     kalman_filter,
-            #     farneback,
-            #     MatchingConfig(thresh, self.kalman.dist, self.kalman.matching_method),
-            #     OptFlowExtraction.DETECTED,
-            #     False,
-            # )
-
-        return TwoUpdateKOFTracker(
-            kalman_filter,
-            farneback,
-            MatchingConfig(thresh, self.kalman.dist, self.kalman.matching_method),
-            OptFlowExtraction.POSTERIOR,
-            self.kalman.always_update_velocities,
+        skt_specs = kalman_linker.KalmanLinkerParameters(
+            -1,
+            detection_std=self.koft.detection_std,
+            process_std=self.koft.process_std,
+            kalman_order=self.koft.kalman_order,
+            n_valid=self.koft.n_valid,
+            n_gap=self.koft.n_gap,
+            association_method=self.koft.association_method,
+            cost=self.koft.cost,
+            track_building=self.koft.track_building,
+            initial_std_factor=self.koft.initial_std_factor,
         )
+        skt_specs.estimate_association_threshold(2, 3.0)
+        tqdm.tqdm.write(f"SKT threshold: {skt_specs.association_threshold}")
 
-    def create_thresholds(self) -> list[float]:
-        if self.tracking_method is TrackingMethod.EMHT:
-            if self.warp:
-                return [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
-            return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]  # MAHA
+        trackmate_specs = kalman_linker.KalmanLinkerParameters(
+            -1,
+            detection_std=self.koft.detection_std,
+            process_std=self.koft.process_std,
+            kalman_order=self.koft.kalman_order,
+            n_valid=self.koft.n_valid,
+            n_gap=self.koft.n_gap,
+            cost=koft.Cost.EUCLIDEAN,
+        )
+        trackmate_specs.estimate_association_threshold(2, 3.0)
+        tqdm.tqdm.write(f"TrackMate threshold: {trackmate_specs.association_threshold}")
+        tqdm.tqdm.write("")
 
-        if (
-            self.tracking_method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF)
-            or self.kalman.dist is Dist.EUCLIDEAN
-        ):
-            if self.warp:
-                return [2.0, 3.0, 5.0, 7.0, 10.0, 15.0]
-            return [3.0, 5.0, 7.0, 10.0, 15.0, 20.0]
+        # Create linkers
+        linkers: list[byotrack.Linker] = []
+        for method in self.tracking_methods:
+            if method is TrackingMethod.EMHT:
+                linkers.append(
+                    IcyEMHTLinker(
+                        self.icy_path,
+                        EMHTParameters(gate_factor=4.0, motion=Motion.MULTI, tree_depth=2),
+                        timeout=180,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)))
+                    )
+                )
 
-        if self.kalman.dist is Dist.MAHALANOBIS:
-            return [2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
+            if method in (TrackingMethod.TRACKMATE, TrackingMethod.TRACKMATE_KF):
+                # We allow for n_gap consecutive miss detections, for which we link up to 1.5 x max_dist.
+                linkers.append(
+                    TrackMateLinker(
+                        self.fiji_path,
+                        TrackMateParameters(
+                            max_frame_gap=trackmate_specs.n_gap,
+                            linking_max_distance=trackmate_specs.association_threshold,
+                            gap_closing_max_distance=trackmate_specs.association_threshold * 1.5,
+                            kalman_search_radius=trackmate_specs.association_threshold
+                            if method is TrackingMethod.TRACKMATE_KF
+                            else None,
+                        ),
+                    )
+                )
 
-        # self.dist is Dist.LIKELIHOOD:
-        return [1e-4, 5e-4, 1e-3, 2.5e-3, 5e-3, 7.5e-3]
+            if method is TrackingMethod.SKT:
+                linkers.append(kalman_linker.KalmanLinker(skt_specs))
+
+            if method is TrackingMethod.KOFT:
+                linkers.append(koft.KOFTLinker(self.koft, farneback))
+
+            if method is TrackingMethod.KOFTmm:
+                koft_specs = copy.deepcopy(self.koft)
+                koft_specs.always_measure_velocity = False  # Disable velocity update for miss detected tracks
+                linkers.append(koft.KOFTLinker(koft_specs, farneback))
+
+            if method is TrackingMethod.TRACKASTRA:
+                linkers.append(
+                    TrackAstraLinker(
+                        Trackastra.from_folder(self.trackastra_model),
+                        TrackAstraParameters(max_distance=20, solver="ilp_nodiv"),
+                    )
+                )
+
+            if method is TrackingMethod.TRACKASTRA_LAP:
+                linkers.append(
+                    trackonstra.TrackOnStraLinker(
+                        trackonstra.TrackOnStraParameters(positional_cutoff=20.0, n_valid=3, n_gap=3),
+                        trackonstra.TrackastraFlex.from_folder(self.trackastra_model),
+                    ),
+                )
+
+        return linkers
 
 
-def main(name: str, cfg_data: dict) -> None:  # noqa: C901, PLR0915
+def main(name: str, cfg_data: dict) -> None:
     print("Running:", name)
     print(yaml.dump(cfg_data))
     cfg = dacite.from_dict(ExperimentConfig, cfg_data, dacite.Config(cast=[pathlib.Path, tuple, enum.Enum]))
 
     enforce_all_seeds(cfg.seed)
 
-    # Read video and ground truth
-    # As the code was designed for simulation initially, let's just patch things with dupre's data
-    if cfg.real_data:
-        video = cfg.dupre_data.open()
-        mu = byotrack.Track.tensorize(cfg.dupre_data.cleaned_tracks())
-        video = video[: len(mu)]
-        ground_truth = {"mu": mu, "weight": torch.ones_like(mu).mean(dim=-1)}
-    else:
-        video = simulation.open_video(cfg.simulation_path)
-        ground_truth = simulation.load_ground_truth(cfg.simulation_path)
+    video = cfg.data.video()
+    ground_truth = cfg.data.ground_truth()  # SINETRA like ground truth
+    gt_tracks = cfg.data.tracks()
 
     # Detections
     detector = cfg.detection.create_detector(ground_truth["mu"])
@@ -219,9 +217,9 @@ def main(name: str, cfg_data: dict) -> None:  # noqa: C901, PLR0915
     tp = 0.0
     n_pred = 0.0
     n_true = 0.0
-    for detections in detections_sequence:
+    for frame_id, detections in enumerate(detections_sequence):
         det_metrics = DetectionMetric(2.0).compute_at(
-            detections, ground_truth["mu"][detections.frame_id], ground_truth["weight"][detections.frame_id]
+            detections, ground_truth["mu"][frame_id], ground_truth["weight"][frame_id]
         )
         tp += det_metrics["tp"]
         n_pred += det_metrics["n_pred"]
@@ -232,28 +230,24 @@ def main(name: str, cfg_data: dict) -> None:  # noqa: C901, PLR0915
     print("Precision", tp / n_pred if n_pred else 1.0)
     print("f1", 2 * tp / (n_true + n_pred) if n_pred + n_true else 1.0)
 
-    if cfg.warp:
-        true_detections = detections_sequence
-        detections_sequence = warp.warp_detections_linear(video, farneback, list(detections_sequence))
-        # ground_truth["mu"] = warp_mu(video, farneback, ground_truth["mu"])  # Let's not warp mu but unwarp tracks
+    # if cfg.warp:  # WTT is out of scope of the paper now... (Though in the thesis)
+    #     true_detections = detections_sequence
+    #     detections_sequence = warp.warp_detections_linear(video, farneback, list(detections_sequence))
+    #     # ground_truth["mu"] = warp_mu(video, farneback, ground_truth["mu"])  # Let's not warp mu but unwarp tracks
 
     refiner = ForwardBackwardInterpolater()
     metrics = {}
-    best_thresh = 0.0
-    best_hota = 0.0
-    best_tracks: Collection[byotrack.Track] = []
-    for thresh in tqdm.tqdm(cfg.create_thresholds()):
-        linker = cfg.create_linker(thresh)
+    for method, linker in zip(
+        cfg.tracking_methods, tqdm.tqdm(cfg.linkers(detections_sequence, video, gt_tracks)), strict=True
+    ):
         try:
-            tracks = linker.run(video, detections_sequence)
-            if cfg.warp:
-                # Let's unwarp tracks
-                # In case SKT we need to extract the unsmoothed tracks
-                if isinstance(linker, (SimpleKalmanTracker, TwoUpdateKOFTracker, SingleUpdateKOFTracker)):
-                    tracks = linker.get_tracks_at_true_detections()
+            if hasattr(linker, "setup"):  # TrackOnStra
+                linker.setup(video, detections_sequence)
 
-                tracks = warp.unwarp_tracks_from_id(tracks, true_detections, detections_sequence)  # type: ignore[arg-type]
-            tracks = refiner.run(video, tracks)  # Close gap (for u-track, EMHT and warped SKT)
+            tracks = linker.run(video, detections_sequence)
+
+            # Fill miss detected positions (if not done in the linker) and remove tracks of length one
+            tracks = [track for track in refiner.run(video, tracks) if len(track) > 1]
         except BaseException as exc:  # noqa: BLE001
             kill_java_in_our_pgrp_pkill()  # Kill Java just in case it survives (ugly, needs to be fixed in ByoTrack)
             tqdm.tqdm.write(str(exc))
@@ -261,31 +255,18 @@ def main(name: str, cfg_data: dict) -> None:  # noqa: C901, PLR0915
 
         tqdm.tqdm.write(f"Built {len(tracks)} tracks")
 
-        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 20:
-            tqdm.tqdm.write(f"Threshold: {thresh} => Tracking failed (too few or too many tracks). Continuing...")
+        if len(tracks) == 0 or len(tracks) > ground_truth["mu"].shape[1] * 40:
+            tqdm.tqdm.write(f"Method: {method.value} => Tracking failed (too few or too many tracks). Continuing...")
             continue
 
         hota = compute_tracking_metrics(tracks, ground_truth)
 
         # Hota @ 2 (-8 => Thresholds is 2)
-        metrics[thresh] = {key: value[-8].item() for key, value in hota.items()}
+        metrics[method.value] = {key: value[-8].item() for key, value in hota.items()}
 
-        tqdm.tqdm.write(f"Threshold: {thresh} => HOTA@2.0: {metrics[thresh]['HOTA']}")
-        tqdm.tqdm.write(yaml.dump(metrics[thresh]))
+        tqdm.tqdm.write(f"Method: {method.value} => HOTA@2.0: {metrics[method.value]['HOTA']}")
+        tqdm.tqdm.write(yaml.dump(metrics[method.value]))
+        torch.save(hota, f"hota_{method.value}.pt")
+        byotrack.Track.save(tracks, f"tracks_{method.value}.pt")
 
-        if metrics[thresh]["HOTA"] > best_hota:
-            torch.save(hota, "hota.pt")  # Save full hota just in case
-            best_thresh = thresh
-            best_tracks = tracks
-            best_hota = metrics[thresh]["HOTA"]
-
-    if best_thresh == 0.0:
-        print("!==============! Tracking failed for all thresholds !==============!")
-        return
-
-    print(f"Best threshold: {best_thresh}")
-    print(yaml.dump(metrics[best_thresh]))
-
-    pathlib.Path("best_metrics.yml").write_text(yaml.dump(metrics[best_thresh]))
-
-    byotrack.Track.save(best_tracks, "tracks.pt")
+    pathlib.Path("metrics.yml").write_text(yaml.dump(metrics))

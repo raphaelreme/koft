@@ -188,8 +188,10 @@ class SimpleKalmanTracker(byotrack.Linker):
 
         self.match_cfg = match_cfg
 
-    def run(
-        self, _video: Sequence[np.ndarray] | np.ndarray, detections_sequence: Sequence[byotrack.Detections]
+    def run(  # Broken by BT v2.0
+        self,
+        _video: Sequence[np.ndarray] | np.ndarray,  # type: ignore[override]
+        detections_sequence: Sequence[byotrack.Detections],  # type: ignore[override]
     ) -> list[byotrack.Track]:
         # Reset tracks and states
         self.tracks = []
@@ -315,7 +317,7 @@ class SimpleKalmanTracker(byotrack.Linker):
         prior.covariance[links[:, 0]] = posterior.covariance
         posterior = prior
 
-        self._handle_tracks(posterior, positions, links, detections.frame_id)
+        self._handle_tracks(posterior, positions, links, detections.frame_id)  # type: ignore[attr-defined]  # BT v2.0
 
     def _handle_tracks(
         self, posterior: GaussianState, measures: torch.Tensor, links: torch.Tensor, frame_id: int

@@ -1,5 +1,12 @@
 __default__:
-  - ./simulator.yml
+  - ./sinetra.yml
 
-real_data: True  # False -> use simulation path / True -> use dupre's data
-simulation_name: dupre
+__run__:
+  __name__: "dupre/{seed}"
+
+data:
+  data_type: dupre
+
+koft:  # In this case, parameter estimation is not robust to the annotations errors... Should we keep this?
+  process_std: 1.0
+  flow_std: 0.5
