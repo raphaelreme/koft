@@ -127,3 +127,13 @@ dmypy.json
 
 # vscode
 .vscode/
+
+# paper
+paper/*
+
+# Random stuff
+*.ipynb
+*.svg
+*.zip
+figures/
+experiments_*/
