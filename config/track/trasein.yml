@@ -1,11 +1,19 @@
+__new_key_policy__: pass
+
 __default__:
   - ./sinetra.yml
 
 __run__:
+  __main__: src.experiments.track_trasein:main
   __name__: trasein
 
 data:
   data_type: trasein
+
+stardist_model: $EXPYRUN_CWD/models/stardist/
+
+koft:
+  flow_std: 1.0
 
 tracking_methods:
   - koft

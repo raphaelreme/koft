@@ -29,6 +29,8 @@ from src.utils import enforce_all_seeds, kill_java_in_our_pgrp_pkill
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    import numpy as np
+
 
 class DetectionMethod(enum.Enum):
     WAVELET = "wavelet"
@@ -88,7 +90,7 @@ class ExperimentConfig:
     def linkers(
         self,
         detections_sequence: Sequence[byotrack.Detections],
-        video: byotrack.Video,
+        video: np.ndarray | Sequence[np.ndarray],
         gt_tracks: list[byotrack.Track],
     ) -> list[byotrack.Linker]:
         # Parameters estimations (KOFT/SKT/eMHT/TrackMate)
@@ -148,7 +150,7 @@ class ExperimentConfig:
                     IcyEMHTLinker(
                         self.icy_path,
                         EMHTParameters(gate_factor=4.0, motion=Motion.MULTI, tree_depth=2),
-                        timeout=180,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)))
+                        timeout=None,  # 180,  # Ensure Icy goes out of infinite loops. (Adapt to your hardware)))
                     )
                 )
 
