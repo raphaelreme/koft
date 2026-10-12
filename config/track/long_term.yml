@@ -1,0 +1,24 @@
+__new_key_policy__: pass
+
+__default__:
+  - ./sinetra.yml
+
+__run__:
+  __main__: src.experiments.long_track:main
+  __output_dir__: experiment_folder/long_tracking/
+
+
+tracking_methods:
+  - koft
+
+# Parameters of the long simulations
+simulation_name: springs_2d
+alpha: 0.2
+delta: 50.0
+seed: 1111
+
+eval_lengths: [50, 100, 200, 500, 1000, 2000, 4000]
+max_length: 4000  # Reduce if a method is unable to run up to 4000
+
+detection:
+  detector: wavelet

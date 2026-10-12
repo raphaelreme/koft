@@ -146,11 +146,7 @@ This will download our trained TrackAstra model for SINETRA, as well as a StarDi
 ### Optical flow
 You can reproduce our optical flow benchmark with:
 ```bash
-$ bash scripts/flow.sh 111
-$ bash scripts/flow.sh 222
-$ bash scripts/flow.sh 333
-$ bash scripts/flow.sh 444
-$ bash scripts/flow.sh 555
+$ bash scripts/flow.sh $seed  # (111, 222, 333, 444, 555)
 ```
 
 Aggregate the results (mean +- std (N)) on the different seeds with:
@@ -162,17 +158,13 @@ $ python -m src.results.flow
 ### Tracking (SINETRA)
 To reproduce our tracking results on SINETRA, run:
 ```bash
-$ bash scripts/track_sinetra.sh 111
-$ bash scripts/track_sinetra.sh 222
-$ bash scripts/track_sinetra.sh 333
-$ bash scripts/track_sinetra.sh 444
-$ bash scripts/track_sinetra.sh 555
+$ bash scripts/track_sinetra.sh $seed  # (111, 222, 333, 444, 555)
 ```
 
 Aggregate the results (mean +- std (N)) on the different seeds with:
 
 ```bash
-$ python -m src.results.sinetra  # will also display the robustness to detection performance
+$ python -m src.results.sinetra  # will also display the robustness to detection performance figure
 ```
 
 To reproduce our noise robustness analysis on SINETRA, run:
@@ -183,7 +175,20 @@ $ bash scripts/track_snr.sh $seed  # (111, 222, 333, 444, 555)
 Aggregate the results (mean +- std (N)) on the different seeds with:
 
 ```bash
-$ python -m src.results.snr
+$ python -m src.results.snr  # will also display the robustness to noise figure
+```
+
+
+To reproduce our length robustness analysis on SINETRA, run:
+```bash
+$ $RUN_KOFT_ENV expyrun config/dataset/springs_2d.yml --n_frames 4000 --seed 1111  # Generate a long SINETRA video
+$ bash scripts/track_long.sh  # Run the long tracking on this video
+```
+
+Aggregate the results (mean +- std (N)) on the different seeds with:
+
+```bash
+$ python -m src.results.long_track  # will also display the robustness to length figure
 ```
 
 ### Tracking (Dupre's Hydra)
