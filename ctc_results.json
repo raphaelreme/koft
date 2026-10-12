@@ -1,0 +1,90 @@
+{
+    "BF-C2DL-HSC": {
+        "TrackMate (Baseline)": {"LNK": 95.7, "BIO": 27.0},
+        "TrackAstra (EPFL-CH)": {"LNK": 96.48, "BIO": 30.49},
+        "Baxter (KTH-SE)": {"LNK": 95.32, "BIO": 41.92},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 97.91, "BIO": 63.50},
+        "TrackTour (MON-AU)": {"LNK": 98.56, "BIO": 56.30},
+        "SAM-2 (RWTH-GE)": {"LNK": 96.69, "BIO": 31.03},
+        "zTrack (SIAT-CN)": {"LNK": 94.39, "BIO": 20.55},
+        "MAGIK (UVIC-ES)": {"LNK": 93.71, "BIO": 21.65},
+        "KOFT (PAST-FR)": {"LNK": 99.05, "BIO": 75.58}
+    },
+    "BF-C2DL-MuSC": {
+        "TrackMate (Baseline)": {"LNK": 86.6, "BIO": 32.9},
+        "TrackAstra (EPFL-CH)": {"LNK": 97.09, "BIO": 49.75},
+        "Baxter (KTH-SE)": {"LNK": 98.30, "BIO": 75.47},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 98.13, "BIO": 80.65},
+        "TrackTour (MON-AU)": {"LNK": 98.54, "BIO": 74.63},
+        "SAM-2 (RWTH-GE)": {"LNK": 97.06, "BIO": 41.33},
+        "zTrack (SIAT-CN)": {"LNK": 95.31, "BIO": 27.40},
+        "MAGIK (UVIC-ES)": {"LNK": 93.14, "BIO": 30.15},
+        "KOFT (PAST-FR)": {"LNK": 98.49, "BIO": 79.38}
+    },
+    "DIC-C2DH-HeLa": {
+        "TrackMate (Baseline)": {"LNK": 98.5, "BIO": 85.3},
+        "TrackAstra (EPFL-CH)": {"LNK": 98.72, "BIO": 88.50},
+        "Baxter (KTH-SE)": {"LNK": 97.96, "BIO": 74.62},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 96.88, "BIO": 68.98},
+        "TrackTour (MON-AU)": {"LNK": 98.62, "BIO": 86.28},
+        "SAM-2 (RWTH-GE)": {"LNK": 98.50, "BIO": 68.90},
+        "zTrack (SIAT-CN)": {"LNK": 98.86, "BIO": 93.12},
+        "MAGIK (UVIC-ES)": {"LNK": 98.76, "BIO": 84.30},
+        "KOFT (PAST-FR)": {"LNK": 98.86, "BIO": 85.76}
+    },
+    "Fluo-C2DL-MSC": {
+        "TrackMate (Baseline)": {"LNK": 89.8, "BIO": 55.6},
+        "TrackAstra (EPFL-CH)": {"LNK": 92.10, "BIO": 65.66},
+        "Baxter (KTH-SE)": {"LNK": 86.82, "BIO": 53.21},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 87.19, "BIO": 58.75},
+        "TrackTour (MON-AU)": {"LNK": 91.02, "BIO": 64.72},
+        "SAM-2 (RWTH-GE)": {"LNK": 92.41, "BIO": 59.22},
+        "zTrack (SIAT-CN)": {"LNK": 91.92, "BIO": 63.34},
+        "MAGIK (UVIC-ES)": {"LNK": 90.71, "BIO": 59.87},
+        "KOFT (PAST-FR)": {"LNK": 94.73, "BIO": 72.71}
+    },
+    "Fluo-N2DH-GOWT1": {
+        "TrackMate (Baseline)": {"LNK": 97.3, "BIO": 67.3},
+        "TrackAstra (EPFL-CH)": {"LNK": 97.79, "BIO": 71.83},
+        "Baxter (KTH-SE)": {"LNK": 97.46, "BIO": 72.33},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 96.75, "BIO": 62.19},
+        "TrackTour (MON-AU)": {"LNK": 97.06, "BIO": 65.04},
+        "SAM-2 (RWTH-GE)": {"LNK": 98.21, "BIO": 66.14},
+        "zTrack (SIAT-CN)": {"LNK": 97.43, "BIO": 69.14},
+        "MAGIK (UVIC-ES)": {"LNK": 97.52, "BIO": 71.63},
+        "KOFT (PAST-FR)": {"LNK": 98.64, "BIO": 78.75}
+    },
+    "Fluo-N2DL-HeLa": {
+        "TrackMate (Baseline)": {"LNK": 99.3, "BIO": 81.7},
+        "TrackAstra (EPFL-CH)": {"LNK": 99.53, "BIO": 91.35},
+        "Baxter (KTH-SE)": {"LNK": 99.32, "BIO": 92.64},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 99.19, "BIO": 86.27},
+        "TrackTour (MON-AU)": {"LNK": 99.32, "BIO": 81.47},
+        "SAM-2 (RWTH-GE)": {"LNK": 99.28, "BIO": 78.65},
+        "zTrack (SIAT-CN)": {"LNK": 99.46, "BIO": 90.51},
+        "MAGIK (UVIC-ES)": {"LNK": 99.21, "BIO": 86.62},
+        "KOFT (PAST-FR)": {"LNK": 99.61, "BIO": 95.10}
+    },
+    "PhC-C2DH-U373": {
+        "TrackMate (Baseline)": {"LNK": 99.5, "BIO": 90.5},
+        "TrackAstra (EPFL-CH)": {"LNK": 99.49, "BIO": 94.92},
+        "Baxter (KTH-SE)": {"LNK": 99.49, "BIO": 94.92},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 96.77, "BIO": 88.20},
+        "TrackTour (MON-AU)": {"LNK": 99.49, "BIO": 96.35},
+        "SAM-2 (RWTH-GE)": {"LNK": 97.65, "BIO": 61.22},
+        "zTrack (SIAT-CN)": {"LNK": 99.49, "BIO": 94.92},
+        "MAGIK (UVIC-ES)": {"LNK": 99.59, "BIO": 94.92},
+        "KOFT (PAST-FR)": {"LNK": 99.37, "BIO": 85.63}
+    },
+    "PhC-C2DL-PSC": {
+        "TrackMate (Baseline)": {"LNK": 99.0, "BIO": 81.7},
+        "TrackAstra (EPFL-CH)": {"LNK": 99.06, "BIO": 81.19},
+        "Baxter (KTH-SE)": {"LNK": 98.88, "BIO": 80.53},
+        "BiologicalNeeds (LUH-GE)": {"LNK": 98.38, "BIO": 80.44},
+        "TrackTour (MON-AU)": {"LNK": 98.94, "BIO": 78.28},
+        "SAM-2 (RWTH-GE)": {"LNK": 99.06, "BIO": 79.18},
+        "zTrack (SIAT-CN)": {"LNK": 98.79, "BIO": 73.71},
+        "MAGIK (UVIC-ES)": {"LNK": 98.72, "BIO": 77.42},
+        "KOFT (PAST-FR)": {"LNK": 99.18, "BIO": 86.18}
+    }
+}
