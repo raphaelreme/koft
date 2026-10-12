@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-import sys
 
 import byotrack
 import byotrack.napari
@@ -11,8 +10,6 @@ import yaml
 from magicgui import magicgui
 from napari._vispy.filters.tracks import TracksFilter  # type: ignore[import-untyped]
 from PIL import Image
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 from src.manual_classification import add_track_classifier
 

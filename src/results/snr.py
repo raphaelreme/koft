@@ -3,8 +3,10 @@ import pathlib
 import numpy as np
 import yaml
 
+from src.results.drawing_helpers import plot_snr_impact
 
-def main(simulation_name="springs_2d"):
+
+def main(simulation_name="springs_2d"):  # noqa: C901, PLR0912
     alphas = [0.02, 0.07, 0.2, 0.35, 0.85]
     deltas = [5.0, 50.0, 500.0]
 
@@ -58,6 +60,29 @@ def main(simulation_name="springs_2d"):
         lines.append("|".join(line))
 
     print("\n".join(lines))
+
+    # Reload results for eMHT / TrackMate / SKT
+    non_impacted_results: dict[str, list[float]] = {method: [] for method in ["skt", "trackmate-kf", "emht"]}
+    paths = (pathlib.Path("experiment_folder") / "tracking" / f"{simulation_name}" / "0.2-50.0").glob("*/*")
+    for path in paths:
+        if not (path / "metrics.yml").exists():
+            continue  # Run has not finished
+
+        detection_cfg = yaml.safe_load((path / "config.yml").read_text())["detection"]
+
+        # Select Fake@80%
+        if detection_cfg["detector"] == "wavelet":
+            continue
+        if detection_cfg["fake"]["fpr"] != 0.2 or detection_cfg["fake"]["fnr"] != 0.2:
+            continue
+
+        metrics = yaml.safe_load((path / "metrics.yml").read_text())
+        for method in non_impacted_results:  # noqa: PLC0206
+            if method not in metrics:
+                continue
+            non_impacted_results[method].append(metrics[method]["HOTA"])
+
+    plot_snr_impact(alphas, deltas, results, non_impacted_results, f"snr_track_{simulation_name}.svg")
 
 
 if __name__ == "__main__":

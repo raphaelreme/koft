@@ -3,6 +3,8 @@ import pathlib
 import numpy as np
 import yaml
 
+from src.results.drawing_helpers import plot_hota_vs_detections
+
 
 def main(simulation_name="springs_2d"):  # noqa: C901, PLR0912
     detections = ["Fake@100%", "Fake@90%", "Fake@80%", "Fake@70%", "Fake@60%", "Wavelet"]
@@ -68,6 +70,10 @@ def main(simulation_name="springs_2d"):  # noqa: C901, PLR0912
         lines.append("|".join(line))
 
     print("\n".join(lines))
+
+    # Restrict plotting for these methods only
+    methods = ["trackmate-kf", "emht", "trackastra-lap", "koft--", "koft"]
+    plot_hota_vs_detections(methods, detections, results, f"tracking_{simulation_name}.svg", conf=0.95)
 
 
 if __name__ == "__main__":

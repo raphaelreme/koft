@@ -393,7 +393,7 @@ wheels = [
 
 [[package]]
 name = "byotrack"
-version = "2.0.5"
+version = "2.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backports-zstd", marker = "python_full_version < '3.14'" },
@@ -418,9 +418,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/70/82802b41aa1fe780a22af6930710aa806ee43c15cfaf601a8c328c9c7152/byotrack-2.0.5.tar.gz", hash = "sha256:7cb0ccc8aa5206edee12c46304847403e7c1cfb18e2ec313bdcd5149132c9a22", size = 151088, upload-time = "2026-08-19T09:26:25.523Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/10/b0131d4906cdf0b9935501a3474a63655d847c5afe59cd99ee441e92134e/byotrack-2.0.7.tar.gz", hash = "sha256:aa9e75b46bbeb73abfbc9969942098c84d295bcef31c37adfd26e60e3b6e6872", size = 156919, upload-time = "2026-10-08T08:29:40.081Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/b0/122b62fea38357720eb4ea0f241b5a80e69b01862f4ec0da5aed3eb13638/byotrack-2.0.5-py3-none-any.whl", hash = "sha256:bf9ccd9778a3be09e06437e3bc64ed2e7bf13a94def7ebdd71c5886c180e6cfc", size = 202595, upload-time = "2026-08-19T09:26:24.095Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/a3/d3306741528940390de8dc71a89498e8870a17a2c55f58a013954532ec42/byotrack-2.0.7-py3-none-any.whl", hash = "sha256:e6bda0d1bfbabc5cc4bde402eb7206f155f9bf2568af15651de6e484fbbfe589", size = 210678, upload-time = "2026-10-08T08:29:38.51Z" },
 ]
 
 [package.optional-dependencies]
@@ -2474,7 +2474,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "byotrack", extras = ["full"] },
+    { name = "byotrack", extras = ["full"], specifier = ">=2.0.7" },
     { name = "dacite" },
     { name = "deep-trainer" },
     { name = "expyrun" },

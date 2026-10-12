@@ -3,6 +3,8 @@ import pathlib
 import numpy as np
 import yaml
 
+from src.results.drawing_helpers import plot_hota_vs_detections
+
 
 def main():  # noqa: C901, PLR0912
     detections = ["Fake@100%", "Fake@90%", "Fake@80%", "Fake@70%", "Fake@60%"]
@@ -63,6 +65,8 @@ def main():  # noqa: C901, PLR0912
         lines.append("|".join(line))
 
     print("\n".join(lines))
+
+    plot_hota_vs_detections(methods, detections, results, "tracking_dupre.svg")
 
 
 if __name__ == "__main__":

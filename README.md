@@ -120,10 +120,10 @@ The experiment configuration files are using environment variables that needs to
 We provide scripts to generate the same dataset that we used and run the same experiments
 
 ```bash
-$ # First download the hydra data (if not already done)
+$ # Download Dupre & Trase-IN Hydra data
 $ bash scripts/download_hydra_data.sh
 $
-$ # Generate datasets for 5 differents seeds
+$ # Generate SINETRA datasets for 5 differents seeds
 $ bash scripts/generate_dataset.sh 111
 $ bash scripts/generate_dataset.sh 222
 $ bash scripts/generate_dataset.sh 333
@@ -132,6 +132,16 @@ $ bash scripts/generate_dataset.sh 555
 ```
 
 These datasets will be stored in `./dataset/`
+
+### MODELS
+
+Some of our experiments rely on trained models. We provide the weigths that we used (or trained), that you may download with:
+
+```bash
+$ bash scripts/download_models.sh
+```
+
+This will download our trained TrackAstra model for SINETRA, as well as a StarDist model from Trase-IN.
 
 ### Optical flow
 You can reproduce our optical flow benchmark with:
@@ -143,22 +153,37 @@ $ bash scripts/flow.sh 444
 $ bash scripts/flow.sh 555
 ```
 
-Aggregating the results (mean +- std (N)) on the different seeds:
+Aggregate the results (mean +- std (N)) on the different seeds with:
 
 ```bash
-$ python scripts/aggregate_flow_results.py
+$ python -m src.results.flow
 ```
 
 ### Tracking (SINETRA)
 To reproduce our tracking results on SINETRA, run:
 ```bash
-$ bash scripts/track_simulation.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
+$ bash scripts/track_sinetra.sh 111
+$ bash scripts/track_sinetra.sh 222
+$ bash scripts/track_sinetra.sh 333
+$ bash scripts/track_sinetra.sh 444
+$ bash scripts/track_sinetra.sh 555
 ```
 
-Aggregating the results (mean +- std (N)) on the different seeds:
+Aggregate the results (mean +- std (N)) on the different seeds with:
 
 ```bash
-$ python scripts/aggregate_results_simulation.py
+$ python -m src.results.sinetra  # will also display the robustness to detection performance
+```
+
+To reproduce our noise robustness analysis on SINETRA, run:
+```bash
+$ bash scripts/track_snr.sh $seed  # (111, 222, 333, 444, 555)
+```
+
+Aggregate the results (mean +- std (N)) on the different seeds with:
+
+```bash
+$ python -m src.results.snr
 ```
 
 ### Tracking (Dupre's Hydra)
@@ -167,16 +192,22 @@ To reproduce our tracking results on Hydra vulgaris, run:
 $ bash scripts/track_dupre.sh $method  # With method in (skt, koft--, koft, emht, trackmate-kf)
 ```
 
-Aggregating the results (mean +- std (N)) on the different seeds:
+Aggregate the results (mean +- std (N)) on the different seeds with:
 
 ```bash
-$ python scripts/aggregate_results_dupre.py
+$ python -m src.results.dupre
 ```
 
-### Noise robustness (SINETRA)
-To reproduce our noise robustness analysis on SINETRA, run:
+### Tracking (Trase-IN)
+To reproduce our tracking results on Hydra vulgaris, run:
 ```bash
-$ bash scripts/track_snr.sh $seed  # (111, 222, 333, 444, 555)
+$ bash scripts/track_trasein.sh
+```
+
+To annotate the resulting tracks run and display the aggregated results, run:
+
+```bash
+$ python -m src.results.trasein
 ```
 
 ## Cite us
